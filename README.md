@@ -234,6 +234,195 @@ This runs comprehensive tests on both hard and soft validation functions with va
 
 ---
 
-## Notes
-- All scripts require a valid `.env` file with your Airtable API key and base ID.
-- Make sure to run the dependency analyzer before running the updater script.
+# AI Reporting V2 - Automated Report Generation System
+
+This project provides an automated report generation system that integrates with Airtable, generates HTML reports, and deploys them to GitHub Pages via Railway webhooks and n8n workflows.
+
+## 🚀 New Features
+
+### Automated Report Generation
+- **HTML Report Generation**: Converts calculated data into beautiful HTML reports
+- **GitHub Pages Deployment**: Automatically deploys reports to GitHub Pages
+- **Webhook Integration**: Railway webhook endpoints for n8n workflow integration
+- **Variable Mapping**: Maps Airtable fields to HTML template variables
+
+### System Components
+1. **Report Generator** (`scripts/report_generator.py`) - Core report generation and deployment
+2. **Webhook Server** (`scripts/webhook_server.py`) - Flask server for n8n integration
+3. **Enhanced Calculation Engine** (`scripts/enhanced_calculation_engine.py`) - Integrated calculations + reports
+4. **Deployment Configuration** (`scripts/deployment_config.py`) - Setup automation
+
+### Integration Workflow
+```
+Airtable Trigger → n8n Workflow → Railway Webhook → Report Generation → GitHub Pages
+```
+
+## 📋 Quick Start
+
+1. **Setup Environment**:
+   ```bash
+   python setup.py
+   ```
+
+2. **Generate Report Manually**:
+   ```bash
+   python scripts/enhanced_calculation_engine.py recABC123
+   ```
+
+3. **Start Webhook Server**:
+   ```bash
+   python scripts/webhook_server.py
+   ```
+
+## 📚 Documentation
+
+- **[Complete System Documentation](REPORT_GENERATION_SYSTEM.md)** - Full setup and usage guide
+- **[GitHub Pages Setup](GITHUB_PAGES_SETUP.md)** - GitHub Pages configuration
+- **[n8n Workflow Template](N8N_WORKFLOW_TEMPLATE.md)** - n8n workflow setup
+
+## 🔧 Configuration
+
+The system requires these environment variables:
+- `AIRTABLE_API_KEY` - Your Airtable API key
+- `AIRTABLE_BASE_ID` - Your Airtable base ID
+- `GITHUB_TOKEN` - GitHub personal access token
+- `GITHUB_REPO` - GitHub repository (username/repo-name)
+- `WEBHOOK_SECRET` - Secret for webhook security
+
+## 🌐 Webhook Endpoints
+
+- `POST /webhook/generate-report` - Generate full report (async)
+- `POST /webhook/generate-report-sync` - Generate full report (sync)
+- `POST /webhook/calculation-only` - Run calculations only
+- `POST /webhook/deploy-only` - Deploy report only
+- `GET /health` - Health check
+
+## 📱 Example Usage
+
+### Manual Report Generation
+```bash
+# Run calculations and generate report
+python scripts/enhanced_calculation_engine.py recABC123
+
+# Generate report only (calculations already done)
+python scripts/report_generator.py recABC123
+```
+
+### Webhook Usage (from n8n)
+```json
+{
+  "url": "https://your-railway-app.railway.app/webhook/generate-report",
+  "method": "POST",
+  "headers": {
+    "X-Webhook-Secret": "your-webhook-secret",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "report_id": "recABC123"
+  }
+}
+```
+
+## 🎯 Deployment
+
+### Railway Deployment
+1. Connect GitHub repository to Railway
+2. Set environment variables in Railway dashboard
+3. Deploy using auto-deploy or manual trigger
+
+### n8n Integration
+1. Create Airtable trigger for new records
+2. Add HTTP request node pointing to Railway webhook
+3. Optional: Add notification nodes for success/failure
+
+## 🧪 Testing
+
+```bash
+# Test report generation
+python test/test_report_generation.py
+
+# Test specific components
+python scripts/report_generator.py recABC123
+python scripts/webhook_server.py
+```
+
+## 📊 Architecture
+
+The system consists of:
+- **Calculation Engine**: Processes Airtable data and performs calculations
+- **Report Generator**: Maps data to HTML template and generates reports
+- **GitHub Pages**: Hosts the generated HTML reports
+- **Railway Webhook**: Provides API endpoints for n8n integration
+- **n8n Workflow**: Automates the trigger and execution process
+
+Reports are generated using the existing HTML template (`templates/v2.html`) with dynamic variable substitution based on the field mapping configuration (`field_mapping.json`).
+
+---
+
+## Test Mode for Report Generation
+
+The report generation system includes a **test mode** that allows you to validate reports locally before deployment. This is essential for verifying data mapping and formatting without affecting GitHub Pages or Airtable records.
+
+### Features
+
+- **Local Testing**: Generate reports in `templates/development/` directory
+- **Data Validation**: Comprehensive validation of field mappings and data types
+- **Validation Reports**: Detailed JSON reports with error/warning analysis
+- **Batch Testing**: Test multiple reports at once
+- **Safe Environment**: No deployment or Airtable updates in test mode
+
+### Usage
+
+#### Method 1: Direct Script Usage
+
+```bash
+# Test a single report
+python scripts/report_generator.py <report_id> --test
+
+# Example
+python scripts/report_generator.py recABC123 --test
+```
+
+#### Method 2: Dedicated Test Script
+
+```bash
+# Test a single report
+python test_report_generator.py test <report_id>
+
+# Test with verbose output
+python test_report_generator.py test <report_id> --verbose
+
+# Test multiple reports in batch
+python test_report_generator.py batch <id1> <id2> <id3>
+
+# List files in development directory
+python test_report_generator.py list
+
+# Clean development directory
+python test_report_generator.py clean
+```
+
+### Test Mode Output
+
+1. **HTML Report**: `{client-name}-{date}.html` - Ready to view in browser
+2. **Validation Report**: `validation_{client-name}-{date}.json` - Detailed validation results
+
+### Validation Checks
+
+- **Required Fields**: Ensures client_name, hhs, est_auto, est_fire, etc. are present
+- **Data Types**: Validates numeric fields contain valid numbers
+- **Field Mapping**: Checks all Airtable fields map to template variables
+- **Formatting**: Verifies currency, percentage, and date formatting
+
+### Best Practices
+
+1. **Always test first**: Run test mode before production deployment
+2. **Check validation**: Review validation results for warnings/errors
+3. **Visual inspection**: Open generated HTML files in browser
+4. **Batch testing**: Test multiple reports to identify patterns
+
+See `templates/development/README.md` for detailed documentation.
+
+---
+
+## Field Mapping Validation Script

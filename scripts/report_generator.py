@@ -1,0 +1,532 @@
+"""
+Report Generator for Automated HTML Report Generation
+
+This script:
+1. Takes calculated values from the calculation engine
+2. Maps them to the HTML template variables
+3. Generates a static HTML report
+4. Commits and pushes to GitHub Pages
+5. Provides webhook endpoint for n8n integration
+"""
+
+import os
+import json
+import shutil
+import subprocess
+from datetime import datetime
+from typing import Dict, Any, Optional
+from pathlib import Path
+import re
+from pyairtable import Api
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Configuration
+AIRTABLE_API_KEY = os.environ.get('AIRTABLE_API_KEY')
+BASE_ID = os.environ.get('AIRTABLE_BASE_ID')
+GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN')
+GITHUB_REPO = os.environ.get('GITHUB_REPO')  # e.g., "username/repo-name"
+GITHUB_PAGES_BRANCH = os.environ.get('GITHUB_PAGES_BRANCH', 'gh-pages')
+
+# Table names
+GENERATED_REPORTS_TABLE = 'Generated_Reports'
+
+class ReportGenerator:
+    """Main class for generating and deploying HTML reports"""
+    
+    def __init__(self, test_mode: bool = False):
+        self.test_mode = test_mode
+        
+        if not AIRTABLE_API_KEY:
+            raise ValueError("AIRTABLE_API_KEY environment variable is not set")
+        if not BASE_ID:
+            raise ValueError("AIRTABLE_BASE_ID environment variable is not set")
+        self.api = Api(AIRTABLE_API_KEY)
+        self.base = self.api.base(BASE_ID)
+        self.template_path = Path(__file__).parent.parent / "templates" / "v2.html"
+        self.output_dir = Path(__file__).parent.parent / "reports"
+        self.github_pages_dir = Path(__file__).parent.parent / "gh-pages"
+        
+        # Set development directory for test mode
+        self.development_dir = Path(__file__).parent.parent / "templates" / "development"
+    
+    def get_report_data(self, report_id: str) -> Optional[Dict[str, Any]]:
+        """Fetch report data from Airtable Generated_Reports table"""
+        try:
+            table = self.base.table(GENERATED_REPORTS_TABLE)
+            record = table.get(report_id)
+            return record['fields']
+        except Exception as e:
+            print(f"Error fetching report {report_id}: {e}")
+            return None
+    
+    def format_value(self, value: Any, field_name: str) -> str:
+        """Format values for display in HTML"""
+        if value is None:
+            return "0"
+        
+        # Handle currency values
+        if field_name in ['est_annual_commission', 'average_premium_per_household', 'cost']:
+            if isinstance(value, (int, float)):
+                return f"{value:,.0f}"
+            return str(value)
+        
+        # Handle percentage values
+        if field_name in ['%won', '%won_website', '%won_calls', 'lead_to_quote_rate']:
+            if isinstance(value, (int, float)):
+                return f"{value:.1f}%"
+            return str(value)
+        
+        # Handle decimal values
+        if field_name in ['year1_return']:
+            if isinstance(value, (int, float)):
+                return f"{value:.2f}"
+            return str(value)
+        
+        # Handle integer values
+        if field_name in ['hhs', 'est_auto', 'est_fire', 'total_leads', 'conversions']:
+            if isinstance(value, (int, float)):
+                return f"{int(value)}"
+            return str(value)
+        
+        # Default string conversion
+        return str(value)
+    
+    def create_template_mapping(self, report_data: Dict[str, Any]) -> Dict[str, str]:
+        """Create mapping from template fields to formatted values using direct Airtable field names"""
+        mapping = {}
+        
+        # Direct mapping: use Airtable field names directly in template
+        for field_name, value in report_data.items():
+            if value is not None:
+                formatted_value = self.format_value(value, field_name)
+                mapping[field_name] = formatted_value
+        
+        # Special handling for date formatting
+        if 'date_end' in report_data:
+            date_end = report_data['date_end']
+            if isinstance(date_end, str):
+                try:
+                    dt = datetime.fromisoformat(date_end)
+                    mapping['month'] = dt.strftime("%B %Y").upper()
+                except:
+                    mapping['month'] = "RECENT"
+            else:
+                mapping['month'] = "RECENT"
+        
+        # Handle monthly HHS data from YTD metadata
+        self._process_monthly_hhs_data(report_data, mapping)
+        
+        # Handle lead-share fields - these might be calculated or placeholder
+        if 'lead-share' not in mapping:
+            mapping['lead-share'] = ''
+        if 'lead-share-bar' not in mapping:
+            mapping['lead-share-bar'] = ''
+        
+        return mapping
+    
+    def _process_monthly_hhs_data(self, report_data: Dict[str, Any], mapping: Dict[str, str]):
+        """Process monthly HHS data from YTD metadata"""
+        import json
+        
+        # Month number to name mapping
+        month_names = {
+            '1': 'jan', '2': 'feb', '3': 'mar', '4': 'apr', '5': 'may', '6': 'jun',
+            '7': 'jul', '8': 'aug', '9': 'sep', '10': 'oct', '11': 'nov', '12': 'dec'
+        }
+        
+        # Initialize all months as empty by default (for bar chart)
+        for month_num, month_name in month_names.items():
+            mapping[f'hhs_{month_name}'] = ''
+        
+        # Process YTD metadata if available
+        if 'hhs_ytd_metadata' in report_data:
+            try:
+                ytd_metadata = report_data['hhs_ytd_metadata']
+                
+                # Handle string JSON or dict
+                if isinstance(ytd_metadata, str):
+                    ytd_metadata = json.loads(ytd_metadata)
+                
+                # Extract months data
+                if isinstance(ytd_metadata, dict) and 'months' in ytd_metadata:
+                    months_data = ytd_metadata['months']
+                    
+                    for month_num, value in months_data.items():
+                        if month_num in month_names:
+                            month_name = month_names[month_num]
+                            # If value is "missing", leave as empty string
+                            if value != "missing":
+                                # Format the value as integer if it's a number
+                                if isinstance(value, (int, float)):
+                                    mapping[f'hhs_{month_name}'] = str(int(value))
+                                else:
+                                    mapping[f'hhs_{month_name}'] = str(value)
+                            # If "missing", it stays as empty string (already set above)
+                            
+            except (json.JSONDecodeError, KeyError, TypeError) as e:
+                print(f"Warning: Could not parse YTD metadata: {e}")
+        
+        # Handle current month - should show current month's HHS value
+        if 'date_end' in report_data:
+            try:
+                date_end = report_data['date_end']
+                if isinstance(date_end, str):
+                    dt = datetime.fromisoformat(date_end)
+                    current_month_num = str(dt.month)
+                    
+                    if current_month_num in month_names:
+                        current_month_name = month_names[current_month_num]
+                        
+                        # Use current month's HHS value
+                        if 'hhs' in report_data and report_data['hhs'] is not None:
+                            current_hhs = self.format_value(report_data['hhs'], 'hhs')
+                            mapping[f'hhs_{current_month_name}'] = current_hhs
+                            
+            except (ValueError, AttributeError) as e:
+                print(f"Warning: Could not determine current month: {e}")
+        
+        # If no date_end, fall back to current system date
+        if all(mapping[f'hhs_{month_names[str(i)]}'] == '' for i in range(1, 13)):
+            # If all months are still empty, try to set current month based on today's date
+            current_month_num = str(datetime.now().month)
+            if current_month_num in month_names:
+                current_month_name = month_names[current_month_num]
+                if 'hhs' in report_data and report_data['hhs'] is not None:
+                    current_hhs = self.format_value(report_data['hhs'], 'hhs')
+                    mapping[f'hhs_{current_month_name}'] = current_hhs
+    
+    def generate_html_report(self, report_data: Dict[str, Any], client_name: str) -> tuple[str, str]:
+        """Generate HTML report from template and data"""
+        # Read template
+        with open(self.template_path, 'r') as f:
+            html_content = f.read()
+        
+        # Create value mapping
+        value_mapping = self.create_template_mapping(report_data)
+        
+        # Replace values in HTML using data-field attributes
+        for field, value in value_mapping.items():
+            pattern = f'(<span[^>]*data-field="{field}"[^>]*>)[^<]*(</span>)'
+            # Use a function replacement to avoid regex group reference issues
+            def replace_func(match):
+                return f'{match.group(1)}{value}{match.group(2)}'
+            html_content = re.sub(pattern, replace_func, html_content)
+        
+        # Generate filename
+        report_date = datetime.now().strftime("%Y-%m-%d")
+        safe_client_name = re.sub(r'[^a-zA-Z0-9-]', '', client_name.replace(' ', '-'))
+        filename = f"{safe_client_name}-{report_date}.html"
+        
+        return html_content, filename
+    
+    def save_report(self, html_content: str, filename: str) -> str:
+        """Save report to local directory"""
+        # Choose output directory based on test mode
+        if self.test_mode:
+            output_dir = self.development_dir
+        else:
+            output_dir = self.output_dir
+        
+        # Ensure output directory exists
+        output_dir.mkdir(exist_ok=True)
+        
+        # Save file
+        file_path = output_dir / filename
+        with open(file_path, 'w') as f:
+            f.write(html_content)
+        
+        print(f"✓ Report saved to {file_path}")
+        return str(file_path)
+    
+    def setup_github_pages(self):
+        """Setup GitHub Pages repository"""
+        if not GITHUB_TOKEN or not GITHUB_REPO:
+            print("✗ GitHub token or repo not configured")
+            return False
+        
+        # Clone or update GitHub Pages repository
+        repo_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git"
+        
+        if self.github_pages_dir.exists():
+            # Pull latest changes
+            try:
+                subprocess.run(
+                    ["git", "pull", "origin", GITHUB_PAGES_BRANCH],
+                    cwd=self.github_pages_dir,
+                    check=True,
+                    capture_output=True
+                )
+                print("✓ Updated GitHub Pages repository")
+            except subprocess.CalledProcessError as e:
+                print(f"✗ Error updating repository: {e}")
+                return False
+        else:
+            # Clone repository
+            try:
+                subprocess.run(
+                    ["git", "clone", "-b", GITHUB_PAGES_BRANCH, repo_url, str(self.github_pages_dir)],
+                    check=True,
+                    capture_output=True
+                )
+                print("✓ Cloned GitHub Pages repository")
+            except subprocess.CalledProcessError as e:
+                print(f"✗ Error cloning repository: {e}")
+                return False
+        
+        return True
+    
+    def deploy_to_github_pages(self, html_content: str, filename: str) -> Optional[str]:
+        """Deploy report to GitHub Pages"""
+        if not self.setup_github_pages():
+            return None
+        
+        if not GITHUB_REPO:
+            print("✗ GitHub repo not configured")
+            return None
+        
+        # Save file to GitHub Pages directory
+        file_path = self.github_pages_dir / filename
+        with open(file_path, 'w') as f:
+            f.write(html_content)
+        
+        # Also create/update index.html with latest report
+        index_path = self.github_pages_dir / "index.html"
+        with open(index_path, 'w') as f:
+            f.write(html_content)
+        
+        # Commit and push
+        try:
+            subprocess.run(
+                ["git", "add", "."],
+                cwd=self.github_pages_dir,
+                check=True
+            )
+            
+            commit_message = f"Update report {filename} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            subprocess.run(
+                ["git", "commit", "-m", commit_message],
+                cwd=self.github_pages_dir,
+                check=True
+            )
+            
+            subprocess.run(
+                ["git", "push", "origin", GITHUB_PAGES_BRANCH],
+                cwd=self.github_pages_dir,
+                check=True
+            )
+            
+            # Generate URL
+            repo_name = GITHUB_REPO.split('/')[-1]
+            github_url = f"https://{GITHUB_REPO.split('/')[0]}.github.io/{repo_name}/{filename}"
+            
+            print(f"✓ Report deployed to GitHub Pages: {github_url}")
+            return github_url
+            
+        except subprocess.CalledProcessError as e:
+            print(f"✗ Error deploying to GitHub Pages: {e}")
+            return None
+    
+    def validate_data_mapping(self, report_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Validate data mapping and return validation results"""
+        validation_results = {
+            'valid': True,
+            'errors': [],
+            'warnings': [],
+            'field_mappings': {},
+            'missing_fields': [],
+            'extra_fields': [],
+            'formatted_values': {}
+        }
+        
+        # Check for required fields
+        required_fields = ['client_name', 'hhs', 'est_auto', 'est_fire', 'est_annual_commission']
+        for field in required_fields:
+            if field not in report_data:
+                validation_results['missing_fields'].append(field)
+                validation_results['errors'].append(f"Missing required field: {field}")
+                validation_results['valid'] = False
+        
+        # Check for fields not in report data (we'll accept any field since we're using direct mapping)
+        # This validation is less strict now since we use direct Airtable field names
+        extra_fields = []  # No longer checking against a mapping file
+        
+        # Create value mapping and validate formatting
+        value_mapping = self.create_template_mapping(report_data)
+        validation_results['field_mappings'] = value_mapping
+        
+        # Validate numeric fields
+        numeric_fields = ['hhs', 'est_auto', 'est_fire', 'est_annual_commission', 'year1_return']
+        for field in numeric_fields:
+            if field in report_data:
+                try:
+                    float(report_data[field])
+                    validation_results['formatted_values'][field] = self.format_value(report_data[field], field)
+                except (ValueError, TypeError):
+                    validation_results['errors'].append(f"Invalid numeric value for {field}: {report_data[field]}")
+                    validation_results['valid'] = False
+        
+        # Validate client name
+        if 'client_name' in report_data:
+            client_name = report_data['client_name']
+            if isinstance(client_name, list):
+                client_name = client_name[0] if client_name else ''
+            if not client_name or client_name.strip() == '':
+                validation_results['errors'].append("Client name is empty")
+                validation_results['valid'] = False
+        
+        return validation_results
+    
+    def generate_test_report(self, report_id: str) -> Optional[Dict[str, Any]]:
+        """Generate a test report with validation information"""
+        print(f"🧪 Running test mode for report ID: {report_id}")
+        
+        # Get report data
+        report_data = self.get_report_data(report_id)
+        if not report_data:
+            print(f"✗ Could not fetch report data for {report_id}")
+            return None
+        
+        # Validate data mapping
+        validation_results = self.validate_data_mapping(report_data)
+        
+        # Print validation results
+        print("\n📊 Data Validation Results:")
+        print(f"Valid: {'✓' if validation_results['valid'] else '✗'}")
+        
+        if validation_results['errors']:
+            print("\n❌ Errors:")
+            for error in validation_results['errors']:
+                print(f"  - {error}")
+        
+        if validation_results['warnings']:
+            print("\n⚠️  Warnings:")
+            for warning in validation_results['warnings']:
+                print(f"  - {warning}")
+        
+        if validation_results['missing_fields']:
+            print(f"\n🔍 Missing fields: {', '.join(validation_results['missing_fields'])}")
+        
+        if validation_results['extra_fields']:
+            print(f"\n➕ Extra fields: {', '.join(validation_results['extra_fields'])}")
+        
+        print(f"\n📋 Field Mappings ({len(validation_results['field_mappings'])} fields):")
+        for template_field, formatted_value in validation_results['field_mappings'].items():
+            print(f"  {template_field}: {formatted_value}")
+        
+        # Generate HTML even if validation fails (for debugging)
+        client_name = report_data.get('client_name', 'Test Client')
+        if isinstance(client_name, list):
+            client_name = client_name[0] if client_name else 'Test Client'
+        
+        print(f"\n🏗️  Generating HTML report for client: {client_name}")
+        html_content, filename = self.generate_html_report(report_data, client_name)
+        
+        # Save to development directory
+        file_path = self.save_report(html_content, filename)
+        
+        # Create validation report
+        validation_filename = f"validation_{filename.replace('.html', '.json')}"
+        validation_file_path = self.development_dir / validation_filename
+        
+        with open(validation_file_path, 'w') as f:
+            json.dump({
+                'report_id': report_id,
+                'client_name': client_name,
+                'validation_results': validation_results,
+                'report_data': report_data,
+                'generated_at': datetime.now().isoformat()
+            }, f, indent=2)
+        
+        print(f"✓ Validation report saved to {validation_file_path}")
+        
+        return {
+            'html_file': file_path,
+            'validation_file': str(validation_file_path),
+            'validation_results': validation_results,
+            'client_name': client_name
+        }
+    
+    def generate_and_deploy(self, report_id: str) -> Optional[str]:
+        """Main function to generate and deploy a report"""
+        if self.test_mode:
+            # Run in test mode - no deployment
+            test_results = self.generate_test_report(report_id)
+            return test_results['html_file'] if test_results else None
+        
+        print(f"Generating report for ID: {report_id}")
+        
+        # Get report data
+        report_data = self.get_report_data(report_id)
+        if not report_data:
+            print(f"✗ Could not fetch report data for {report_id}")
+            return None
+        
+        # Get client name
+        client_name = report_data.get('client_name', 'Unknown Client')
+        if isinstance(client_name, list):
+            client_name = client_name[0] if client_name else 'Unknown Client'
+        
+        print(f"Generating report for client: {client_name}")
+        
+        # Generate HTML
+        html_content, filename = self.generate_html_report(report_data, client_name)
+        
+        # Save locally
+        local_path = self.save_report(html_content, filename)
+        
+        # Deploy to GitHub Pages
+        github_url = self.deploy_to_github_pages(html_content, filename)
+        
+        if github_url:
+            # Update Airtable record with GitHub URL
+            try:
+                table = self.base.table(GENERATED_REPORTS_TABLE)
+                table.update(report_id, {
+                    'github_url': github_url,
+                    'report_generated': True,
+                    'report_generation_date': datetime.now().isoformat()
+                })
+                print(f"✓ Updated Airtable record with GitHub URL")
+            except Exception as e:
+                print(f"✗ Error updating Airtable record: {e}")
+        
+        return github_url
+
+
+def main(report_id: Optional[str] = None, test_mode: bool = False):
+    """Main function for command line usage"""
+    generator = ReportGenerator(test_mode=test_mode)
+    
+    if report_id:
+        # Generate specific report
+        result = generator.generate_and_deploy(report_id)
+        if result:
+            if test_mode:
+                print(f"\n✓ Test report generated successfully: {result}")
+                print(f"📁 Check templates/development/ for output files")
+            else:
+                print(f"\n✓ Report generated successfully: {result}")
+        else:
+            print("\n✗ Report generation failed")
+    else:
+        print("Usage: python report_generator.py <report_id> [--test]")
+        print("Examples:")
+        print("  python report_generator.py recABC123")
+        print("  python report_generator.py recABC123 --test")
+        print("")
+        print("Options:")
+        print("  --test    Run in test mode (saves to templates/development/)")
+
+
+if __name__ == "__main__":
+    import sys
+    
+    if len(sys.argv) > 1:
+        report_id = sys.argv[1]
+        test_mode = "--test" in sys.argv
+        main(report_id, test_mode)
+    else:
+        main()
