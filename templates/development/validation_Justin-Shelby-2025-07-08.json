@@ -1,0 +1,190 @@
+{
+  "report_id": "recbZsDW7qUjKT7JA",
+  "client_name": "Justin Shelby",
+  "validation_results": {
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "field_mappings": {
+      "Report_ID": "Justin_Shelby_Test",
+      "hhs": "6",
+      "est_auto": "9",
+      "est_fire": "5",
+      "est_annual_commission": "$1,571",
+      "year1_return": "17%",
+      "hhs_ytd": "6",
+      "%won": "18%",
+      "autos_per_hh": "1.5",
+      "fire_per_hh": "0.8",
+      "search_impression_share": "27%",
+      "hh_available": "125",
+      "average_premium_per_household": "$2,500",
+      "commission_rate": "10%",
+      "potential_leads": "37",
+      "%won_website": "12%",
+      "%won_calls": "22%",
+      "website_hhs": "1.6",
+      "call_hhs": "4.7",
+      "client_report": "rec6RgS6IoTrKeD0g",
+      "quote_starts": "13",
+      "sms_clicks": "0",
+      "phone_clicks": "2",
+      "total_leads": "34",
+      "conversions": "19",
+      "cost": "$1,341",
+      "cost_per_lead": "$39",
+      "lead_to_quote_rate": "90%",
+      "maass_agent_conversion": "25%",
+      "date_end": "2025-06-30",
+      "date_start": "2025-06-01",
+      "client": "recqazNKM60mOyDs5",
+      "client_headshot": "https://v5.airtableusercontent.com/v3/u/43/43/1752004800000/kemMs1E0Q2jUoaa4ZgAOQA/x9uefn1I96lnWwGlTUE0kctrmcjh3tZ1uNvvW3CjNgUzi8z4xFX--xaxdkiVyL5u59DBAAQDU_F9Hk1Kp3V4hjq_gCR0nDhX5zgV5iBT7XHwMD6tmGTRyJMrI0kLp1L0zPmKMu2JHRicNe87-Q6WLUbexFxFw5h7HygCVuS1L5Y/Jsi7NP55D0F50xp3Ai2oKhNy0zbXmMXfLEIsnKMr6i4",
+      "client_name": "Justin Shelby",
+      "RID": "9",
+      "record_id": "recbZsDW7qUjKT7JA",
+      "client_record_id": "recFGKCBeHGL9RPwz",
+      "search_lost_IS_budget": "30%",
+      "Fallback Details": "[\n  {\n    \"variable\": \"lead_to_quote_rate\",\n    \"value\": 0.9,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:40.761226\"\n  },\n  {\n    \"variable\": \"%won_website\",\n    \"value\": 0.12,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:40.934082\"\n  },\n  {\n    \"variable\": \"fire_per_hh\",\n    \"value\": \"0.8\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.084492\"\n  },\n  {\n    \"variable\": \"maass_agent_conversion\",\n    \"value\": 0.25,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.226908\"\n  },\n  {\n    \"variable\": \"commission_rate\",\n    \"value\": 0.1,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.226930\"\n  },\n  {\n    \"variable\": \"average_premium_per_household\",\n    \"value\": \"2,500\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.226942\"\n  },\n  {\n    \"variable\": \"autos_per_hh\",\n    \"value\": \"1.5\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.344521\"\n  },\n  {\n    \"variable\": \"hhs_ytd\",\n    \"value\": 6.285,\n    \"source\": \"calculated_ytd\",\n    \"timestamp\": \"2025-07-07T14:33:41.454969\"\n  }\n]",
+      "Validation Warnings": "\ud83d\udfe1 average_premium_per_household: Expected range check error: '2,500' is not a valid number for comparison\n\ud83d\udfe1 cost_per_lead: Outside expected range: 39.43305544117647 does not meet '<= 35'\n\ud83d\udfe1 hh_available: Outside expected range: 125.27634487840824 does not meet '>= 20 AND <= 60'\n\ud83d\udfe1 hhs: Outside expected range: 6.285 does not meet '>= 1 AND <= 5'\n\ud83d\udfe1 est_annual_commission: Outside expected range: 1571.25 does not meet '>= 200 AND <= 350'\n\ud83d\udfe1 year1_return: Outside expected range: 0.1719415291836916 does not meet '>= 0.20 AND <= 2.0'",
+      "Calculation Log": "**LEVEL 1 CALCULATIONS (3 variables):**\n\n\u2713 **website\\_hhs** = 1.56\n  Formula: = {quote_starts} x {%won_website}\n  Calculated: 13 \\* 0.12 = 1.56\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **%won\\_calls** = 0.2250\n  Formula: = {lead_to_quote_rate} x {maass_agent\\_conversion}\n  Calculated: 0.9 \\* 0.25 = 0.2250\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.35 (PASS)\n\n\u2713 **total\\_leads** = 34.00\n  Formula: = {quote_starts} + {phone_clicks} + {sms\\_clicks} + {conversions} \n  Calculated: 13 + 2 + 0 + 19 = 34.00\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND integer (PASS)\n  \u2705 Expected Range: >= 10 AND <= 65 (PASS)\n\n\n**LEVEL 2 CALCULATIONS (3 variables):**\n\n\u2713 **call\\_hhs** = 4.73\n  Formula: = ({conversions} + {phone_clicks}) x {%won_calls}\n  Calculated: (19 + 2) \\* 0.225 = 4.73\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **cost_per_lead** = 39.43\n  Formula: = {cost} / {total\\_leads}\n  Calculated: 1340.723885 / 34.0 = 39.43\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: <= 35 (OUTSIDE)\n\n\u2713 **hh\\_available** = 125.28\n  Formula: = {total_leads} / {search_impression\\_share}\n  Calculated: 34.0 / 0.27140000000000003 = 125.28\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 20 AND <= 60 (FAR OUTSIDE - High)\n\n\n**LEVEL 3 CALCULATIONS (2 variables):**\n\n\u2713 **hhs** = 6.29\n  Formula: = {website_hhs} + {call_hhs}\n  Calculated: 1.56 + 4.7250000000000005 = 6.29\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: >= 1 AND <= 5 (OUTSIDE - High)\n\n\u2713 **potential\\_leads** = 37.09\n  Formula: = {hh_available} x {search_lost_IS_budget}\n  Calculated: 125.27634487840824 \\* 0.2961 = 37.09\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 10 AND <= 150 (PASS)\n\n\n**LEVEL 4 CALCULATIONS (4 variables):**\n\n\u2713 **%won** = 0.1849\n  Formula: = {hhs} / {total\\_leads}\n  Calculated: 6.285 / 34.0 = 0.1849\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.25 (PASS)\n\n\u2713 **est\\_auto** = 9.43\n  Formula: = {hhs} x {autos_per_hh}\n  Calculated: 6.285 \\* 1.5 = 9.43\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\u2713 **est_annual_commission** = 1,571.25\n  Formula: = {hhs} x {average_premium_per_household} x {commission_rate}\n  Calculated: 6.285 _ 2500.0 _ 0.1 = 1,571.25\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 200 AND <= 350 (FAR OUTSIDE - High)\n\n\u2713 **est\\_fire** = 5.03\n  Formula: = {hhs} x {fire_per_hh}\n  Calculated: 6.285 \\* 0.8 = 5.03\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\n**LEVEL 5 CALCULATIONS (1 variables):**\n\n\u2713 **year1\\_return** = 0.1719\n  Formula: = ({est_annual_commission} - {cost}) / {cost}\n  Calculated: (1571.25 - 1340.723885) / 1340.723885 = 0.1719\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: >= 0.20 AND <= 2.0 (OUTSIDE - Low)\n\n\n**DATA QUALITY SUMMARY:**\n\n- **Total Variables:** 21\n- **Fallbacks Used:** 8\n- Global Default: 7\n- Calculated Ytd: 1\n\n- **Validation Results:**\n- Hard Validation Pass: 20/21 (95%)\n- Hard Validation Fail: 1\n- Within Expected Range: 15/21 (71%)\n- Outside Expected Range: 4\n- Far Outside Expected Range: 2\n\n**WARNINGS:**\n\ud83d\udea8 **average_premium_per\\_household**: Validation error: '2,500' is not a valid number for comparison\n\u26a0\ufe0f **average_premium_per\\_household**: 2,500 (Expected range issue)\n\u26a0\ufe0f **cost_per_lead**: 39.43 (Expected range issue)\n\u26a0\ufe0f **hh\\_available**: 125.28 (Expected range issue)\n\u26a0\ufe0f **hhs**: 6.29 (Expected range issue)\n\u26a0\ufe0f **est_annual_commission**: 1,571.25 (Expected range issue)\n\u26a0\ufe0f **year1\\_return**: 0.1719 (Expected range issue)\n",
+      "is_full_month": "True",
+      "month": "JUNE 2025",
+      "year": "2025",
+      "hhs_ytd_metadata": "{\n  \"reason\": \"No historical data found, using current month HHS value\",\n  \"months\": {\n    \"1\": \"missing\",\n    \"2\": \"missing\",\n    \"3\": \"missing\",\n    \"4\": \"missing\",\n    \"5\": \"missing\"\n  },\n  \"ytd_value\": 6.285,\n  \"current_month_hhs\": 6.285\n}",
+      "Last Updated": "2025-07-08T17:05:35.000Z",
+      "hhs_jan": "",
+      "hhs_feb": "",
+      "hhs_mar": "",
+      "hhs_apr": "",
+      "hhs_may": "",
+      "hhs_jun": "",
+      "hhs_jul": "6",
+      "hhs_aug": "",
+      "hhs_sep": "",
+      "hhs_oct": "",
+      "hhs_nov": "",
+      "hhs_dec": "",
+      "lead-share": "",
+      "lead-share-bar": ""
+    },
+    "missing_fields": [],
+    "extra_fields": [],
+    "formatted_values": {
+      "hhs": "6",
+      "est_auto": "9",
+      "est_fire": "5",
+      "est_annual_commission": "$1,571",
+      "year1_return": "17%"
+    }
+  },
+  "report_data": {
+    "Report_ID": "Justin_Shelby_Test",
+    "hhs": 6.285,
+    "est_auto": 9.4275,
+    "est_fire": 5.0280000000000005,
+    "est_annual_commission": 1571.25,
+    "year1_return": 0.1719415291836916,
+    "hhs_ytd": 6.285,
+    "%won": 0.18485294117647058,
+    "autos_per_hh": 1.5,
+    "fire_per_hh": 0.8,
+    "search_impression_share": [
+      "27.14%"
+    ],
+    "hh_available": 125.27634487840824,
+    "average_premium_per_household": 2500,
+    "commission_rate": 0.1,
+    "potential_leads": 37.09432571849668,
+    "%won_website": 0.12,
+    "%won_calls": 0.225,
+    "website_hhs": 1.56,
+    "call_hhs": 4.7250000000000005,
+    "client_report": [
+      "rec6RgS6IoTrKeD0g"
+    ],
+    "quote_starts": [
+      13
+    ],
+    "sms_clicks": [
+      0
+    ],
+    "phone_clicks": [
+      2
+    ],
+    "total_leads": [
+      34
+    ],
+    "conversions": [
+      19
+    ],
+    "cost": [
+      1340.723885
+    ],
+    "cost_per_lead": "39.43305544117647",
+    "lead_to_quote_rate": 0.9,
+    "maass_agent_conversion": 0.25,
+    "date_end": [
+      "2025-06-30"
+    ],
+    "date_start": [
+      "2025-06-01"
+    ],
+    "client": [
+      "recqazNKM60mOyDs5"
+    ],
+    "client_headshot": [
+      {
+        "id": "attJaTfd2TsLaV2qg",
+        "width": 250,
+        "height": 306,
+        "url": "https://v5.airtableusercontent.com/v3/u/43/43/1752004800000/kemMs1E0Q2jUoaa4ZgAOQA/x9uefn1I96lnWwGlTUE0kctrmcjh3tZ1uNvvW3CjNgUzi8z4xFX--xaxdkiVyL5u59DBAAQDU_F9Hk1Kp3V4hjq_gCR0nDhX5zgV5iBT7XHwMD6tmGTRyJMrI0kLp1L0zPmKMu2JHRicNe87-Q6WLUbexFxFw5h7HygCVuS1L5Y/Jsi7NP55D0F50xp3Ai2oKhNy0zbXmMXfLEIsnKMr6i4",
+        "filename": "justin shelby.webp",
+        "size": 28472,
+        "type": "image/webp",
+        "thumbnails": {
+          "small": {
+            "url": "https://v5.airtableusercontent.com/v3/u/43/43/1752004800000/R64goYnmhCglVGJGOyE3jw/cD5U8Clp-t2xX_qiSbD0ldpkcl1ySkfSdrgrsFculXbYp47lT6c6VTUYoIkqbnJxLHCt_63stelOHFEFW1CyNIpSS8kJ8t6k0_Vpwh1McS8YMjhVr81xU3l7pShWDTxxuj4Ff5RoQGrwSr6mF1ZklA/rcJT_HLAlaqD3eatzFEbLoTSXr23jKXcNyWb8fK7pD8",
+            "width": 29,
+            "height": 35
+          },
+          "large": {
+            "url": "https://v5.airtableusercontent.com/v3/u/43/43/1752004800000/wkCLypOO4jmwaTVvGebApw/sjCNHPeIKvtlrO61LuR8hS8a6IfJtJlNh97lp1TEfTEW_rvTHqsEi_3sEW8ybbw6PoEwWCGGyAVdilucBNVWi4fCb1bKc3lN3CSg960fq7Y7eJffNadDGywbd_F3l0le3rzR7xBgQN0Axv1HXjBsuA/nQ5iynFl-XaMYGZgU_JHFW1yOhncJsEJMf-MyrBLL6U",
+            "width": 250,
+            "height": 306
+          },
+          "full": {
+            "url": "https://v5.airtableusercontent.com/v3/u/43/43/1752004800000/Vn7YnQp8F8_hJg2agrXSWQ/xemD4-bUXwpBSXeeiljZ47cFNdW1uLxaVSWcFMY07ipIoU-_C64ehxFNWYEai8O7X9uBMB822QcLl8xUoqxblNa5C0SyEuiEnYVSGINoJXJGEEC3bj4GLBLESaHi_BL1rSErzpK9sIt8Cbpa1H6Cug/D1E_KxZsFBLKnmna52nlhhYNE6nEKr_GvNzff6Q1sfY",
+            "width": 250,
+            "height": 306
+          }
+        }
+      }
+    ],
+    "client_name": [
+      "Justin Shelby"
+    ],
+    "RID": 9,
+    "record_id": "recbZsDW7qUjKT7JA",
+    "client_record_id": [
+      "recFGKCBeHGL9RPwz"
+    ],
+    "search_lost_IS_budget": [
+      0.2961
+    ],
+    "Fallback Details": "[\n  {\n    \"variable\": \"lead_to_quote_rate\",\n    \"value\": 0.9,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:40.761226\"\n  },\n  {\n    \"variable\": \"%won_website\",\n    \"value\": 0.12,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:40.934082\"\n  },\n  {\n    \"variable\": \"fire_per_hh\",\n    \"value\": \"0.8\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.084492\"\n  },\n  {\n    \"variable\": \"maass_agent_conversion\",\n    \"value\": 0.25,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.226908\"\n  },\n  {\n    \"variable\": \"commission_rate\",\n    \"value\": 0.1,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.226930\"\n  },\n  {\n    \"variable\": \"average_premium_per_household\",\n    \"value\": \"2,500\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.226942\"\n  },\n  {\n    \"variable\": \"autos_per_hh\",\n    \"value\": \"1.5\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:33:41.344521\"\n  },\n  {\n    \"variable\": \"hhs_ytd\",\n    \"value\": 6.285,\n    \"source\": \"calculated_ytd\",\n    \"timestamp\": \"2025-07-07T14:33:41.454969\"\n  }\n]",
+    "Validation Warnings": "\ud83d\udfe1 average_premium_per_household: Expected range check error: '2,500' is not a valid number for comparison\n\ud83d\udfe1 cost_per_lead: Outside expected range: 39.43305544117647 does not meet '<= 35'\n\ud83d\udfe1 hh_available: Outside expected range: 125.27634487840824 does not meet '>= 20 AND <= 60'\n\ud83d\udfe1 hhs: Outside expected range: 6.285 does not meet '>= 1 AND <= 5'\n\ud83d\udfe1 est_annual_commission: Outside expected range: 1571.25 does not meet '>= 200 AND <= 350'\n\ud83d\udfe1 year1_return: Outside expected range: 0.1719415291836916 does not meet '>= 0.20 AND <= 2.0'",
+    "Calculation Log": "**LEVEL 1 CALCULATIONS (3 variables):**\n\n\u2713 **website\\_hhs** = 1.56\n  Formula: = {quote_starts} x {%won_website}\n  Calculated: 13 \\* 0.12 = 1.56\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **%won\\_calls** = 0.2250\n  Formula: = {lead_to_quote_rate} x {maass_agent\\_conversion}\n  Calculated: 0.9 \\* 0.25 = 0.2250\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.35 (PASS)\n\n\u2713 **total\\_leads** = 34.00\n  Formula: = {quote_starts} + {phone_clicks} + {sms\\_clicks} + {conversions} \n  Calculated: 13 + 2 + 0 + 19 = 34.00\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND integer (PASS)\n  \u2705 Expected Range: >= 10 AND <= 65 (PASS)\n\n\n**LEVEL 2 CALCULATIONS (3 variables):**\n\n\u2713 **call\\_hhs** = 4.73\n  Formula: = ({conversions} + {phone_clicks}) x {%won_calls}\n  Calculated: (19 + 2) \\* 0.225 = 4.73\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **cost_per_lead** = 39.43\n  Formula: = {cost} / {total\\_leads}\n  Calculated: 1340.723885 / 34.0 = 39.43\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: <= 35 (OUTSIDE)\n\n\u2713 **hh\\_available** = 125.28\n  Formula: = {total_leads} / {search_impression\\_share}\n  Calculated: 34.0 / 0.27140000000000003 = 125.28\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 20 AND <= 60 (FAR OUTSIDE - High)\n\n\n**LEVEL 3 CALCULATIONS (2 variables):**\n\n\u2713 **hhs** = 6.29\n  Formula: = {website_hhs} + {call_hhs}\n  Calculated: 1.56 + 4.7250000000000005 = 6.29\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: >= 1 AND <= 5 (OUTSIDE - High)\n\n\u2713 **potential\\_leads** = 37.09\n  Formula: = {hh_available} x {search_lost_IS_budget}\n  Calculated: 125.27634487840824 \\* 0.2961 = 37.09\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 10 AND <= 150 (PASS)\n\n\n**LEVEL 4 CALCULATIONS (4 variables):**\n\n\u2713 **%won** = 0.1849\n  Formula: = {hhs} / {total\\_leads}\n  Calculated: 6.285 / 34.0 = 0.1849\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.25 (PASS)\n\n\u2713 **est\\_auto** = 9.43\n  Formula: = {hhs} x {autos_per_hh}\n  Calculated: 6.285 \\* 1.5 = 9.43\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\u2713 **est_annual_commission** = 1,571.25\n  Formula: = {hhs} x {average_premium_per_household} x {commission_rate}\n  Calculated: 6.285 _ 2500.0 _ 0.1 = 1,571.25\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 200 AND <= 350 (FAR OUTSIDE - High)\n\n\u2713 **est\\_fire** = 5.03\n  Formula: = {hhs} x {fire_per_hh}\n  Calculated: 6.285 \\* 0.8 = 5.03\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\n**LEVEL 5 CALCULATIONS (1 variables):**\n\n\u2713 **year1\\_return** = 0.1719\n  Formula: = ({est_annual_commission} - {cost}) / {cost}\n  Calculated: (1571.25 - 1340.723885) / 1340.723885 = 0.1719\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: >= 0.20 AND <= 2.0 (OUTSIDE - Low)\n\n\n**DATA QUALITY SUMMARY:**\n\n- **Total Variables:** 21\n- **Fallbacks Used:** 8\n- Global Default: 7\n- Calculated Ytd: 1\n\n- **Validation Results:**\n- Hard Validation Pass: 20/21 (95%)\n- Hard Validation Fail: 1\n- Within Expected Range: 15/21 (71%)\n- Outside Expected Range: 4\n- Far Outside Expected Range: 2\n\n**WARNINGS:**\n\ud83d\udea8 **average_premium_per\\_household**: Validation error: '2,500' is not a valid number for comparison\n\u26a0\ufe0f **average_premium_per\\_household**: 2,500 (Expected range issue)\n\u26a0\ufe0f **cost_per_lead**: 39.43 (Expected range issue)\n\u26a0\ufe0f **hh\\_available**: 125.28 (Expected range issue)\n\u26a0\ufe0f **hhs**: 6.29 (Expected range issue)\n\u26a0\ufe0f **est_annual_commission**: 1,571.25 (Expected range issue)\n\u26a0\ufe0f **year1\\_return**: 0.1719 (Expected range issue)\n",
+    "is_full_month": [
+      true
+    ],
+    "month": [
+      "June"
+    ],
+    "year": [
+      2025
+    ],
+    "hhs_ytd_metadata": "{\n  \"reason\": \"No historical data found, using current month HHS value\",\n  \"months\": {\n    \"1\": \"missing\",\n    \"2\": \"missing\",\n    \"3\": \"missing\",\n    \"4\": \"missing\",\n    \"5\": \"missing\"\n  },\n  \"ytd_value\": 6.285,\n  \"current_month_hhs\": 6.285\n}",
+    "Last Updated": "2025-07-08T17:05:35.000Z"
+  },
+  "generated_at": "2025-07-08T13:20:01.417637"
+}

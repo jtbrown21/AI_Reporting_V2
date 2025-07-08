@@ -373,13 +373,6 @@
             flex-shrink: 0;
         }
 
-        /* Swap targets */
-        .swap-target {
-            background-color: #fef3c7;
-            padding: 2px 6px;
-            border-radius: 3px;
-            display: inline-block;
-        }
     </style>
 </head>
 
@@ -394,33 +387,32 @@
             <div class="date">CREATED <span class="swap-target" data-field="month">JUNE 2025</span></div>
         </div>
 
-        <!-- Performance Summary -->
-        <div class="summary-box">
-            <h1 class="summary-title">LAST MONTH'S PERFORMANCE SUMMARY<sup>1</sup></h1>
-
-            <div class="highlight-box">
-                <div class="highlight-main">
-                    <span class="highlight-number swap-target" data-field="hhs">5</span>
-                    <span class="highlight-text">New Households added last month</span>
-                </div>
-                <div class="highlight-subtext">
-                    Generating an estimated <span class="swap-target" data-field="est_auto">7</span> auto policies
-                    & <span class="swap-target" data-field="est_fire">6</span> fire policies
-                </div>
+    <!-- Performance Summary -->
+    <div class="summary-box">
+        <h1 class="summary-title">LAST MONTH'S PERFORMANCE SUMMARY<sup>1</sup></h1>
+    
+        <div class="highlight-box">
+            <div class="highlight-main">
+                <span class="highlight-number swap-target" data-field="hhs">5</span>
+                <span class="highlight-text">New Households added last month</span>
             </div>
-
-            <div class="metrics-row">
-                <div class="metric">
-                    <div class="metric-label">EST. ANNUAL COMMISSION</div>
-                    <div class="metric-value">$<span class="swap-target" data-field="est_annual_commission">1,650</span>
-                    </div>
-                </div>
-                <div class="metric">
-                    <div class="metric-label">1<sup>ST</sup> YEAR RETURN ON AD SPEND</div>
-                    <div class="metric-value"><span class="swap-target" data-field="year1_return">1.13</span>X</div>
-                </div>
+            <div class="highlight-subtext">
+                Generating an estimated <span class="swap-target" data-field="est_auto">7</span> auto policies
+                & <span class="swap-target" data-field="est_fire">6</span> fire policies
             </div>
         </div>
+    
+        <div class="metrics-row">
+            <div class="metric">
+                <div class="metric-label">EST. ANNUAL COMMISSION</div>
+                <div class="metric-value swap-target" data-field="est_annual_commission">1,650</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">1<sup>ST</sup> YEAR RETURN ON AD SPEND</div>
+                <div class="metric-value"><span class="swap-target" data-field="year1_return">1.13</span>X</div>
+            </div>
+        </div>
+    </div>
 
         <!-- Growth Story -->
         <div class="growth-section">
@@ -499,13 +491,11 @@
                 <div class="lead-metrics">
                     <div class="lead-metric-row">
                         <span class="lead-metric-label">Cost/Lead</span>
-                        <span class="lead-metric-value">$<span class="swap-target"
-                                data-field="cost_per_lead">32.50</span></span>
+                        <span class="lead-metric-value swap-target" data-field="cost_per_lead">32.50</span>
                     </div>
                     <div class="lead-metric-row">
                         <span class="lead-metric-label">%Won<sup>2</sup></span>
-                        <span class="lead-metric-value"><span class="swap-target"
-                                data-field="%won">11.08</span>%</span>
+                        <span class="lead-metric-value swap-target" data-field="%won">11.08</span>
                     </div>
                     <div class="lead-metric-row">
                         <span class="lead-metric-label">Autos per HH<sup>3</sup></span>

@@ -62,36 +62,134 @@ class ReportGenerator:
             print(f"Error fetching report {report_id}: {e}")
             return None
     
+    def _get_variable_data_types(self) -> Dict[str, str]:
+        """Fetch and cache variable data types from the Report_Variables table."""
+        if hasattr(self, '_variable_data_types'):
+            return self._variable_data_types
+        data_types = {}
+        try:
+            table = self.base.table('Report_Variables')
+            records = table.all()
+            
+            for record in records:
+                # Use Variable_ID instead of Variable_Name
+                name = record['fields'].get('Variable_ID')
+                dtype = record['fields'].get('Data_Type')
+                if name and dtype:
+                    data_types[name] = dtype.lower()
+        except Exception as e:
+            print(f"Warning: Could not fetch variable data types: {e}")
+        self._variable_data_types = data_types
+        return data_types
+
+    def _get_variable_display_decimals(self) -> Dict[str, int]:
+        """Fetch and cache variable display decimals from the Report_Variables table."""
+        if hasattr(self, '_variable_display_decimals'):
+            return self._variable_display_decimals
+        display_decimals = {}
+        try:
+            table = self.base.table('Report_Variables')
+            records = table.all()
+            
+            for record in records:
+                # Use Variable_ID instead of Variable_Name
+                name = record['fields'].get('Variable_ID')
+                decimals = record['fields'].get('Display_Decimals')
+                if name and decimals is not None:
+                    try:
+                        display_decimals[name] = int(decimals)
+                    except Exception as e:
+                        print(f"Warning: Could not convert decimals for {name}: {e}")
+        except Exception as e:
+            print(f"Warning: Could not fetch variable display decimals: {e}")
+        self._variable_display_decimals = display_decimals
+        return display_decimals
+
     def format_value(self, value: Any, field_name: str) -> str:
-        """Format values for display in HTML"""
+        """Format values for display in HTML, using ONLY Report_Variables data type and Display_Decimals."""
         if value is None:
             return "0"
-        
-        # Handle currency values
-        if field_name in ['est_annual_commission', 'average_premium_per_household', 'cost']:
-            if isinstance(value, (int, float)):
-                return f"{value:,.0f}"
+
+        # Check data type and display decimals from Report_Variables
+        data_types = self._get_variable_data_types()
+        display_decimals = self._get_variable_display_decimals()
+        dtype = data_types.get(field_name)
+        decimals = display_decimals.get(field_name)
+
+        # Extract actual value from lists if needed
+        if isinstance(value, list) and value:
+            value = value[0]
+
+        # Convert to numeric if possible
+        numeric_value = None
+        if isinstance(value, (int, float)):
+            numeric_value = value
+        elif isinstance(value, str):
+            try:
+                # Handle percentage strings
+                if value.endswith('%'):
+                    numeric_value = float(value.strip('%')) / 100.0
+                else:
+                    numeric_value = float(value)
+            except ValueError:
+                pass
+
+        # Apply formatting based on Data_Type from Airtable
+        if dtype == 'percentage':
+            if numeric_value is not None:
+                # Default to 0 decimals for percentages if not specified
+                decimal_places = decimals if decimals is not None else 0
+                percentage_value = numeric_value * 100
+                return f"{percentage_value:.{decimal_places}f}%"
             return str(value)
         
-        # Handle percentage values
-        if field_name in ['%won', '%won_website', '%won_calls', 'lead_to_quote_rate']:
-            if isinstance(value, (int, float)):
-                return f"{value:.1f}%"
+        elif dtype == 'currency':
+            if numeric_value is not None:
+                # Default to 0 decimals for currency if not specified
+                decimal_places = decimals if decimals is not None else 0
+                formatted_number = f"{numeric_value:,.{decimal_places}f}"
+                return f"${formatted_number}"
             return str(value)
         
-        # Handle decimal values
-        if field_name in ['year1_return']:
-            if isinstance(value, (int, float)):
-                return f"{value:.2f}"
+        elif dtype == 'number':
+            if numeric_value is not None:
+                # Use specified decimals, or default to 0 for whole numbers, 2 for decimals
+                if decimals is not None:
+                    return f"{numeric_value:.{decimals}f}"
+                else:
+                    # Default: integers get 0 decimals, floats get 1 decimal if they have fractional part
+                    if numeric_value == int(numeric_value):
+                        return f"{int(numeric_value)}"
+                    else:
+                        return f"{numeric_value:.1f}"
             return str(value)
         
-        # Handle integer values
-        if field_name in ['hhs', 'est_auto', 'est_fire', 'total_leads', 'conversions']:
-            if isinstance(value, (int, float)):
-                return f"{int(value)}"
+        elif dtype == 'decimal':
+            if numeric_value is not None:
+                decimal_places = decimals if decimals is not None else 2
+                return f"{numeric_value:.{decimal_places}f}"
             return str(value)
         
-        # Default string conversion
+        elif dtype == 'integer':
+            if numeric_value is not None:
+                if decimals is not None and decimals > 0:
+                    return f"{numeric_value:.{decimals}f}"
+                else:
+                    return f"{int(round(numeric_value))}"
+            return str(value)
+        
+        elif dtype == 'text':
+            # For text fields, just return as string
+            return str(value)
+        
+        elif dtype == 'image':
+            # Special handling for client_headshot field
+            if field_name == 'client_headshot':
+                return self._extract_image_url(value)
+            # For other image fields, return as is (the template will handle image processing)
+            return str(value)
+        
+        # If no Data_Type specified in Airtable, return as string
         return str(value)
     
     def create_template_mapping(self, report_data: Dict[str, Any]) -> Dict[str, str]:
@@ -101,7 +199,11 @@ class ReportGenerator:
         # Direct mapping: use Airtable field names directly in template
         for field_name, value in report_data.items():
             if value is not None:
-                formatted_value = self.format_value(value, field_name)
+                # Special handling for client_name: extract from list if needed
+                if field_name == 'client_name' and isinstance(value, list):
+                    formatted_value = self.format_value(value[0] if value else '', field_name)
+                else:
+                    formatted_value = self.format_value(value, field_name)
                 mapping[field_name] = formatted_value
         
         # Special handling for date formatting
@@ -212,11 +314,42 @@ class ReportGenerator:
         
         # Replace values in HTML using data-field attributes
         for field, value in value_mapping.items():
-            pattern = f'(<span[^>]*data-field="{field}"[^>]*>)[^<]*(</span>)'
-            # Use a function replacement to avoid regex group reference issues
-            def replace_func(match):
-                return f'{match.group(1)}{value}{match.group(2)}'
-            html_content = re.sub(pattern, replace_func, html_content)
+            # Skip chart month labels - they should keep their month names, not show values
+            if field.startswith('hhs_') and field.endswith(('_jan', '_feb', '_mar', '_apr', '_may', '_jun', 
+                                                           '_jul', '_aug', '_sep', '_oct', '_nov', '_dec')):
+                continue
+            if field in ['hhs_jan', 'hhs_feb', 'hhs_mar', 'hhs_apr', 'hhs_may', 'hhs_jun',
+                        'hhs_jul', 'hhs_aug', 'hhs_sep', 'hhs_oct', 'hhs_nov', 'hhs_dec']:
+                continue
+                
+            # Special handling for client_headshot - set as background-image style
+            if field == 'client_headshot' and value:
+                # Look for the profile-img div and add background-image style
+                pattern = r'(<div[^>]*class="[^"]*profile-img[^"]*"[^>]*data-field="client_headshot"[^>]*)(>)'
+                def replace_func(match):
+                    existing_attrs = match.group(1)
+                    # Check if style attribute already exists
+                    if 'style=' in existing_attrs:
+                        # Add to existing style
+                        style_pattern = r'(style="[^"]*)'
+                        style_replacement = f'\\1; background-image: url({value}); background-size: cover; background-position: center; border-radius: 50%; overflow: hidden'
+                        updated_attrs = re.sub(style_pattern, style_replacement, existing_attrs)
+                    else:
+                        # Add new style attribute
+                        updated_attrs = f'{existing_attrs} style="background-image: url({value}); background-size: cover; background-position: center; border-radius: 50%; overflow: hidden"'
+                    return f'{updated_attrs}{match.group(2)}'
+                html_content = re.sub(pattern, replace_func, html_content)
+            else:
+                # Handle normal field replacements for both span and div tags
+                for tag in ['span', 'div']:
+                    pattern = f'(<{tag}[^>]*data-field="{field}"[^>]*>)[^<]*(</{tag}>)'
+                    # Use a function replacement to avoid regex group reference issues
+                    def replace_func(match):
+                        return f'{match.group(1)}{value}{match.group(2)}'
+                    html_content = re.sub(pattern, replace_func, html_content)
+        
+        # Process chart bars to set dynamic heights and values
+        html_content = self._process_chart_data(html_content, value_mapping)
         
         # Generate filename
         report_date = datetime.now().strftime("%Y-%m-%d")
@@ -497,7 +630,208 @@ class ReportGenerator:
                 print(f"✗ Error updating Airtable record: {e}")
         
         return github_url
+    
+    def debug_report_variables_table(self):
+        """Debug function to inspect the Report_Variables table structure"""
+        print("\n" + "="*60)
+        print("REPORT_VARIABLES TABLE DEBUG")
+        print("="*60)
+        
+        try:
+            table = self.base.table('Report_Variables')
+            records = table.all()
+            print(f"Found {len(records)} records in Report_Variables table")
+            
+            if not records:
+                print("❌ No records found in Report_Variables table!")
+                return
+            
+            # Show structure of first record
+            first_record = records[0]
+            print(f"\nFirst record structure:")
+            print(f"Record ID: {first_record.get('id')}")
+            print(f"Available fields: {list(first_record['fields'].keys())}")
+            
+            # Show all records
+            print(f"\nAll records:")
+            for i, record in enumerate(records):
+                fields = record['fields']
+                print(f"\nRecord {i+1} (ID: {record.get('id')}):")
+                for field_name, field_value in fields.items():
+                    print(f"  {field_name}: {field_value} (type: {type(field_value)})")
+            
+            # Check for common field name variations
+            common_variations = [
+                'Variable_Name', 'Variable Name', 'variable_name', 'name', 'Name',
+                'Data_Type', 'Data Type', 'data_type', 'type', 'Type',
+                'Display_Decimals', 'Display Decimals', 'display_decimals', 'decimals', 'Decimals'
+            ]
+            
+            print(f"\nChecking for common field name variations:")
+            first_fields = first_record['fields'].keys()
+            for variation in common_variations:
+                if variation in first_fields:
+                    print(f"  ✓ Found: {variation}")
+                else:
+                    print(f"  ✗ Missing: {variation}")
+                    
+        except Exception as e:
+            print(f"❌ Error accessing Report_Variables table: {e}")
+        
+        print("="*60)
+    
+    def _extract_image_url(self, attachment_data: Any) -> str:
+        """Extract the full-size image URL from Airtable attachment data."""
+        try:
+            # Handle case where attachment_data is a dictionary (single attachment)
+            if isinstance(attachment_data, dict):
+                url = attachment_data.get('url')
+                if url:
+                    return url
+            
+            # Handle case where attachment_data is a list (multiple attachments)
+            elif isinstance(attachment_data, list) and attachment_data:
+                first_attachment = attachment_data[0]
+                if isinstance(first_attachment, dict):
+                    url = first_attachment.get('url')
+                    if url:
+                        return url
+            
+            # Handle case where attachment_data is a string (JSON)
+            elif isinstance(attachment_data, str):
+                import json
+                try:
+                    parsed = json.loads(attachment_data)
+                    return self._extract_image_url(parsed)
+                except json.JSONDecodeError:
+                    pass
+        except Exception as e:
+            print(f"Warning: Could not extract image URL from {attachment_data}: {e}")
+        
+        # Return empty string if extraction fails
+        return ""
 
+    def _process_chart_bars(self, html_content: str, report_data: Dict[str, Any]) -> str:
+        """Process chart bars to set dynamic heights and ensure all bars have values."""
+        # Monthly HHS fields in order
+        months = ['hhs_jan', 'hhs_feb', 'hhs_mar', 'hhs_apr', 'hhs_may', 'hhs_jun', 
+                 'hhs_jul', 'hhs_aug', 'hhs_sep', 'hhs_oct', 'hhs_nov', 'hhs_dec']
+        
+        # Get monthly values
+        monthly_values = []
+        for month in months:
+            value = report_data.get(month, 0)
+            if value is None or value == '':
+                value = 0
+            try:
+                monthly_values.append(float(value))
+            except (ValueError, TypeError):
+                monthly_values.append(0.0)
+        
+        print(f"[DEBUG] Monthly values: {dict(zip(months, monthly_values))}")
+        
+        # Calculate dynamic heights (max height = 160px, min = 20px for non-zero values)
+        max_value = max(monthly_values) if any(v > 0 for v in monthly_values) else 1
+        max_height = 160
+        min_height = 20
+        
+        print(f"[DEBUG] Max value: {max_value}")
+        
+        # Use a simpler approach - replace each chart bar one by one
+        import re
+        
+        # Find all chart-bar-wrapper sections
+        pattern = r'<div class="chart-bar-wrapper">\s*<div class="chart-bar"[^>]*style="[^"]*"[^>]*>.*?</div>\s*</div>'
+        matches = list(re.finditer(pattern, html_content, re.DOTALL))
+        
+        print(f"[DEBUG] Found {len(matches)} chart bars")
+        
+        # Replace from the end to avoid index shifting
+        for i in reversed(range(len(matches))):
+            if i < len(months):
+                month_field = months[i]
+                value = monthly_values[i]
+                
+                # Calculate height
+                if value > 0:
+                    height = int((value / max_value) * max_height)
+                    if height < min_height:
+                        height = min_height
+                else:
+                    height = 0
+                
+                print(f"[DEBUG] {month_field}: value={value}, height={height}px")
+                
+                # Format value for display
+                formatted_value = self.format_value(value, month_field) if value > 0 else ""
+                
+                # Create the replacement content
+                if value > 0:
+                    replacement = f'<div class="chart-bar-wrapper"><div class="chart-bar" style="height: {height}px;"><span class="chart-bar-value swap-target" data-field="{month_field}">{formatted_value}</span></div></div>'
+                else:
+                    replacement = f'<div class="chart-bar-wrapper"><div class="chart-bar" style="height: {height}px;"></div></div>'
+                
+                # Replace in HTML
+                match = matches[i]
+                html_content = html_content[:match.start()] + replacement + html_content[match.end():]
+        
+        return html_content
+
+    def _process_chart_data(self, html_content: str, value_mapping: Dict[str, str]) -> str:
+        """Process chart data to set dynamic bar heights and values based on monthly HHS data."""
+        
+        # Get monthly data from value_mapping (which includes processed hhs_jan, hhs_feb, etc.)
+        months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        monthly_values = []
+        
+        for month in months:
+            field_name = f'hhs_{month}'
+            value_str = value_mapping.get(field_name, '0')
+            
+            # Convert to numeric value
+            try:
+                if value_str and value_str.strip():
+                    value = float(value_str)
+                else:
+                    value = 0.0
+            except:
+                value = 0.0
+            
+            monthly_values.append(value)
+        
+        # Calculate max value for scaling (avoid division by zero)
+        max_value = max(monthly_values) if any(v > 0 for v in monthly_values) else 1
+        max_height = 160  # Maximum bar height in pixels
+        
+        # Find all chart-bar-wrapper divs (should be 12 total)
+        wrapper_pattern = r'<div class="chart-bar-wrapper">\s*<div class="chart-bar" style="height:\s*\d+px;"[^>]*>.*?</div>\s*</div>'
+        wrappers = list(re.finditer(wrapper_pattern, html_content, re.DOTALL))
+        
+        # Process each wrapper from right to left (reverse order) to avoid position shifts
+        for i in reversed(range(min(len(wrappers), len(monthly_values)))):
+            wrapper_match = wrappers[i]
+            value = monthly_values[i]
+            month = months[i]
+            
+            # Calculate proportional height
+            height = int((value / max_value) * max_height) if max_value > 0 else 0
+            
+            # Create the new wrapper content
+            if value > 0:
+                new_wrapper = f'''<div class="chart-bar-wrapper">
+                    <div class="chart-bar" style="height: {height}px;">
+                        <span class="chart-bar-value">{int(value)}</span>
+                    </div>
+                </div>'''
+            else:
+                new_wrapper = f'''<div class="chart-bar-wrapper">
+                    <div class="chart-bar" style="height: {height}px;"></div>
+                </div>'''
+            
+            # Replace the wrapper
+            html_content = html_content[:wrapper_match.start()] + new_wrapper + html_content[wrapper_match.end():]
+        
+        return html_content
 
 def main(report_id: Optional[str] = None, test_mode: bool = False):
     """Main function for command line usage"""
