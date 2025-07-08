@@ -1,0 +1,186 @@
+{
+  "report_id": "recgP7kCGtvivnO4q",
+  "client_name": "Greg Aldridge",
+  "validation_results": {
+    "valid": true,
+    "errors": [],
+    "warnings": [],
+    "field_mappings": {
+      "Report_ID": "Greg_Aldridge_Test",
+      "hhs": "4",
+      "est_auto": "6",
+      "est_fire": "3",
+      "est_annual_commission": "1,121",
+      "year1_return": "0.43",
+      "hhs_ytd": "4.484999999999999",
+      "%won": "0.1%",
+      "autos_per_hh": "1.5",
+      "fire_per_hh": "0.8",
+      "search_impression_share": "['27.93%']",
+      "hh_available": "121.73290368779091",
+      "average_premium_per_household": "2,500",
+      "commission_rate": "0.1",
+      "potential_leads": "0",
+      "%won_website": "0.1%",
+      "%won_calls": "0.2%",
+      "website_hhs": "3.36",
+      "call_hhs": "1.125",
+      "client_report": "['recWHneM6usMbJBJG']",
+      "quote_starts": "[28]",
+      "sms_clicks": "[1]",
+      "phone_clicks": "[1]",
+      "total_leads": "[30]",
+      "conversions": "[4]",
+      "cost": "[782.0628149999999]",
+      "cost_per_lead": "26.068760499999996",
+      "lead_to_quote_rate": "0.9%",
+      "maass_agent_conversion": "0.25",
+      "date_end": "['2025-06-30']",
+      "date_start": "['2025-06-01']",
+      "client": "['rec6zgCaD4tOOHokX']",
+      "client_headshot": "[{'id': 'att5eVE3EvBvVfUhj', 'width': 250, 'height': 306, 'url': 'https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/hjS8Cs6-HZwzcFUjcfPGng/0bXr_BZCroVXH8rsuCFkDJ2Mhqi5htGEafyP9kxXRKJkJ0aXUvTRJZo8kz60hQ3keyztftqYY7fJKRRUyFLvvvvZt0g75sFcU27L94SU69n9RyNrd3k25oQxhMEh6VqAyRhTDs0sr36x6HzeiJiUVOri_dpg8q6SVyeqLpZDhNk/6QDmEH-xoWQiUY0fBdvtk070iLCsF6Cw_U45oTNZ6k8', 'filename': 'greg aldrige.webp', 'size': 5236, 'type': 'image/webp', 'thumbnails': {'small': {'url': 'https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/6zoZkBD8VYiYvoncwyj9dQ/WEfFd8ptMaSimaphC5e211HCyyS7QrrUIsG2lxQTdi7a0rdWUHbXEfqvQxmvvHr00UcQVxUylK5e0bFTTJVAu6-6nfirzZn1-2MFNII1iervhVMXi_GqB5Hr9yonGVZtUe_YOXp0IGdKU1PAnPWKHg/1Nu6OezVVxEOdoy2mHAhwwYOajOvuLFYj_rlmBjzEnE', 'width': 29, 'height': 35}, 'large': {'url': 'https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/H0995upluYAlQxdu5AZ0Pw/CBA4BZIb04oBB6Iz-TS2_QMVqUVQjGrAuCacv_bpZfYdUZKHeHSKpBQqwOTLLPvZB-4dBh8hnA2FWtMdcMzMjJpDlb08fJ-FHmXD7Jek4ZT0zFr1FNOIpEVbab35Tae9XD8fPP4GqyVNv3sgJ-G2og/3BiZ07ITDY83guSH9FyXSoi_ZwF3APeK0xH4MoB5D4g', 'width': 250, 'height': 306}, 'full': {'url': 'https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/Pi-ivjGxCojN82GaDVsbLg/bakKB6mdi1g3TA3kcQW-BhzW_55r85YdvplrvgWFZOtFufuMvf-TcP-wfzz02wbbEzdH3nJ-dV6R6jKxtIk4N-qOHdssAs8ox_ojmGiM0105fxVUQds13tSvOB_Xpcs36r9dvvU9ZWit0pZbLY2npg/9MujzVsBBqTROo418iSLczy-I_xMrG9Q0SKz3aVFjYY', 'width': 250, 'height': 306}}}]",
+      "client_name": "['Greg Aldridge']",
+      "RID": "12",
+      "record_id": "recgP7kCGtvivnO4q",
+      "client_record_id": "['rec0nOqGypctAy8sU']",
+      "Fallback Details": "[\n  {\n    \"variable\": \"lead_to_quote_rate\",\n    \"value\": 0.9,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:16.543556\"\n  },\n  {\n    \"variable\": \"%won_website\",\n    \"value\": 0.12,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:16.662934\"\n  },\n  {\n    \"variable\": \"search_lost_IS_budget\",\n    \"value\": 0.0,\n    \"source\": \"zero_fallback\",\n    \"timestamp\": \"2025-07-07T14:56:16.792878\"\n  },\n  {\n    \"variable\": \"fire_per_hh\",\n    \"value\": \"0.8\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:16.926773\"\n  },\n  {\n    \"variable\": \"maass_agent_conversion\",\n    \"value\": 0.25,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.052356\"\n  },\n  {\n    \"variable\": \"commission_rate\",\n    \"value\": 0.1,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.052413\"\n  },\n  {\n    \"variable\": \"average_premium_per_household\",\n    \"value\": \"2,500\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.052442\"\n  },\n  {\n    \"variable\": \"autos_per_hh\",\n    \"value\": \"1.5\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.182620\"\n  },\n  {\n    \"variable\": \"hhs_ytd\",\n    \"value\": 4.484999999999999,\n    \"source\": \"calculated_ytd\",\n    \"timestamp\": \"2025-07-07T14:56:17.339421\"\n  }\n]",
+      "Validation Warnings": "Level 0 variable 'hhs_ytd' has no value\n\ud83d\udfe1 search_lost_IS_budget: Outside expected range: 0.0 does not meet '>= 0.20 AND <= 0.50'\n\ud83d\udfe1 hh_available: Outside expected range: 121.73290368779091 does not meet '>= 20 AND <= 60'\n\ud83d\udfe1 potential_leads: Outside expected range: 0.0 does not meet '>= 10 AND <= 150'\n\ud83d\udfe1 est_annual_commission: Outside expected range: 1121.2499999999998 does not meet '>= 200 AND <= 350'",
+      "Calculation Log": "**LEVEL 1 CALCULATIONS (3 variables):**\n\n\u2713 **website\\_hhs** = 3.36\n  Formula: = {quote_starts} x {%won_website}\n  Calculated: 28 \\* 0.12 = 3.36\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **%won\\_calls** = 0.2250\n  Formula: = {lead_to_quote_rate} x {maass_agent\\_conversion}\n  Calculated: 0.9 \\* 0.25 = 0.2250\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.35 (PASS)\n\n\u2713 **total\\_leads** = 34.00\n  Formula: = {quote_starts} + {phone_clicks} + {sms\\_clicks} + {conversions} \n  Calculated: 28 + 1 + 1 + 4 = 34.00\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND integer (PASS)\n  \u2705 Expected Range: >= 10 AND <= 65 (PASS)\n\n\n**LEVEL 2 CALCULATIONS (3 variables):**\n\n\u2713 **call\\_hhs** = 1.12\n  Formula: = ({conversions} + {phone_clicks}) x {%won_calls}\n  Calculated: (4 + 1) \\* 0.225 = 1.12\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **cost_per_lead** = 23.00\n  Formula: = {cost} / {total\\_leads}\n  Calculated: 782.0628149999999 / 34.0 = 23.00\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: <= 35 (PASS)\n\n\u2713 **hh\\_available** = 121.73\n  Formula: = {total_leads} / {search_impression\\_share}\n  Calculated: 34.0 / 0.2793 = 121.73\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 20 AND <= 60 (FAR OUTSIDE - High)\n\n\n**LEVEL 3 CALCULATIONS (2 variables):**\n\n\u2713 **hhs** = 4.48\n  Formula: = {website_hhs} + {call_hhs}\n  Calculated: 3.36 + 1.125 = 4.48\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **potential\\_leads** = 0.0000\n  Formula: = {hh_available} x {search_lost_IS_budget}\n  Calculated: 121.73290368779091 \\* 0.0 = 0.0000\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: >= 10 AND <= 150 (OUTSIDE - Low)\n\n\n**LEVEL 4 CALCULATIONS (4 variables):**\n\n\u2713 **%won** = 0.1319\n  Formula: = {hhs} / {total\\_leads}\n  Calculated: 4.484999999999999 / 34.0 = 0.1319\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.25 (PASS)\n\n\u2713 **est\\_auto** = 6.73\n  Formula: = {hhs} x {autos_per_hh}\n  Calculated: 4.484999999999999 \\* 1.5 = 6.73\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\u2713 **est_annual_commission** = 1,121.25\n  Formula: = {hhs} x {average_premium_per_household} x {commission_rate}\n  Calculated: 4.484999999999999 _ 2500.0 _ 0.1 = 1,121.25\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 200 AND <= 350 (FAR OUTSIDE - High)\n\n\u2713 **est\\_fire** = 3.59\n  Formula: = {hhs} x {fire_per_hh}\n  Calculated: 4.484999999999999 \\* 0.8 = 3.59\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\n**LEVEL 5 CALCULATIONS (1 variables):**\n\n\u2713 **year1\\_return** = 0.4337\n  Formula: = ({est_annual_commission} - {cost}) / {cost}\n  Calculated: (1121.2499999999998 - 782.0628149999999) / 782.0628149999999 = 0.4337\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 0.20 AND <= 2.0 (PASS)\n\n\n**DATA QUALITY SUMMARY:**\n\n- **Total Variables:** 22\n- **Fallbacks Used:** 9\n- Global Default: 7\n- Zero Fallback: 1\n- Calculated Ytd: 1\n\n- **Validation Results:**\n- Hard Validation Pass: 22/22 (100%)\n- Within Expected Range: 18/22 (82%)\n- Outside Expected Range: 2\n- Far Outside Expected Range: 2\n\n**WARNINGS:**\n\u26a0\ufe0f **search_lost_IS\\_budget**: 0.0000 (Expected range issue)\n\u26a0\ufe0f **hh\\_available**: 121.73 (Expected range issue)\n\u26a0\ufe0f **potential\\_leads**: 0.0000 (Expected range issue)\n\u26a0\ufe0f **est_annual_commission**: 1,121.25 (Expected range issue)\n",
+      "is_full_month": "[True]",
+      "month": "JUNE 2025",
+      "year": "[2025]",
+      "hhs_ytd_metadata": "{\n  \"reason\": \"No historical data found, using current month HHS value\",\n  \"months\": {\n    \"1\": \"missing\",\n    \"2\": \"missing\",\n    \"3\": \"missing\",\n    \"4\": \"missing\",\n    \"5\": \"missing\"\n  },\n  \"ytd_value\": 4.484999999999999,\n  \"current_month_hhs\": 4.484999999999999\n}",
+      "Last Updated": "2025-07-07T19:33:41.000Z",
+      "hhs_jan": "",
+      "hhs_feb": "",
+      "hhs_mar": "",
+      "hhs_apr": "",
+      "hhs_may": "",
+      "hhs_jun": "",
+      "hhs_jul": "4",
+      "hhs_aug": "",
+      "hhs_sep": "",
+      "hhs_oct": "",
+      "hhs_nov": "",
+      "hhs_dec": "",
+      "lead-share": "",
+      "lead-share-bar": ""
+    },
+    "missing_fields": [],
+    "extra_fields": [],
+    "formatted_values": {
+      "hhs": "4",
+      "est_auto": "6",
+      "est_fire": "3",
+      "est_annual_commission": "1,121",
+      "year1_return": "0.43"
+    }
+  },
+  "report_data": {
+    "Report_ID": "Greg_Aldridge_Test",
+    "hhs": 4.484999999999999,
+    "est_auto": 6.727499999999999,
+    "est_fire": 3.5879999999999996,
+    "est_annual_commission": 1121.25,
+    "year1_return": 0.43370836522894896,
+    "hhs_ytd": 4.484999999999999,
+    "%won": 0.13191176470588234,
+    "autos_per_hh": 1.5,
+    "fire_per_hh": 0.8,
+    "search_impression_share": [
+      "27.93%"
+    ],
+    "hh_available": 121.73290368779091,
+    "average_premium_per_household": 2500,
+    "commission_rate": 0.1,
+    "potential_leads": 0,
+    "%won_website": 0.12,
+    "%won_calls": 0.225,
+    "website_hhs": 3.36,
+    "call_hhs": 1.125,
+    "client_report": [
+      "recWHneM6usMbJBJG"
+    ],
+    "quote_starts": [
+      28
+    ],
+    "sms_clicks": [
+      1
+    ],
+    "phone_clicks": [
+      1
+    ],
+    "total_leads": [
+      30
+    ],
+    "conversions": [
+      4
+    ],
+    "cost": [
+      782.0628149999999
+    ],
+    "cost_per_lead": "26.068760499999996",
+    "lead_to_quote_rate": 0.9,
+    "maass_agent_conversion": 0.25,
+    "date_end": [
+      "2025-06-30"
+    ],
+    "date_start": [
+      "2025-06-01"
+    ],
+    "client": [
+      "rec6zgCaD4tOOHokX"
+    ],
+    "client_headshot": [
+      {
+        "id": "att5eVE3EvBvVfUhj",
+        "width": 250,
+        "height": 306,
+        "url": "https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/hjS8Cs6-HZwzcFUjcfPGng/0bXr_BZCroVXH8rsuCFkDJ2Mhqi5htGEafyP9kxXRKJkJ0aXUvTRJZo8kz60hQ3keyztftqYY7fJKRRUyFLvvvvZt0g75sFcU27L94SU69n9RyNrd3k25oQxhMEh6VqAyRhTDs0sr36x6HzeiJiUVOri_dpg8q6SVyeqLpZDhNk/6QDmEH-xoWQiUY0fBdvtk070iLCsF6Cw_U45oTNZ6k8",
+        "filename": "greg aldrige.webp",
+        "size": 5236,
+        "type": "image/webp",
+        "thumbnails": {
+          "small": {
+            "url": "https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/6zoZkBD8VYiYvoncwyj9dQ/WEfFd8ptMaSimaphC5e211HCyyS7QrrUIsG2lxQTdi7a0rdWUHbXEfqvQxmvvHr00UcQVxUylK5e0bFTTJVAu6-6nfirzZn1-2MFNII1iervhVMXi_GqB5Hr9yonGVZtUe_YOXp0IGdKU1PAnPWKHg/1Nu6OezVVxEOdoy2mHAhwwYOajOvuLFYj_rlmBjzEnE",
+            "width": 29,
+            "height": 35
+          },
+          "large": {
+            "url": "https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/H0995upluYAlQxdu5AZ0Pw/CBA4BZIb04oBB6Iz-TS2_QMVqUVQjGrAuCacv_bpZfYdUZKHeHSKpBQqwOTLLPvZB-4dBh8hnA2FWtMdcMzMjJpDlb08fJ-FHmXD7Jek4ZT0zFr1FNOIpEVbab35Tae9XD8fPP4GqyVNv3sgJ-G2og/3BiZ07ITDY83guSH9FyXSoi_ZwF3APeK0xH4MoB5D4g",
+            "width": 250,
+            "height": 306
+          },
+          "full": {
+            "url": "https://v5.airtableusercontent.com/v3/u/43/43/1751997600000/Pi-ivjGxCojN82GaDVsbLg/bakKB6mdi1g3TA3kcQW-BhzW_55r85YdvplrvgWFZOtFufuMvf-TcP-wfzz02wbbEzdH3nJ-dV6R6jKxtIk4N-qOHdssAs8ox_ojmGiM0105fxVUQds13tSvOB_Xpcs36r9dvvU9ZWit0pZbLY2npg/9MujzVsBBqTROo418iSLczy-I_xMrG9Q0SKz3aVFjYY",
+            "width": 250,
+            "height": 306
+          }
+        }
+      }
+    ],
+    "client_name": [
+      "Greg Aldridge"
+    ],
+    "RID": 12,
+    "record_id": "recgP7kCGtvivnO4q",
+    "client_record_id": [
+      "rec0nOqGypctAy8sU"
+    ],
+    "Fallback Details": "[\n  {\n    \"variable\": \"lead_to_quote_rate\",\n    \"value\": 0.9,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:16.543556\"\n  },\n  {\n    \"variable\": \"%won_website\",\n    \"value\": 0.12,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:16.662934\"\n  },\n  {\n    \"variable\": \"search_lost_IS_budget\",\n    \"value\": 0.0,\n    \"source\": \"zero_fallback\",\n    \"timestamp\": \"2025-07-07T14:56:16.792878\"\n  },\n  {\n    \"variable\": \"fire_per_hh\",\n    \"value\": \"0.8\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:16.926773\"\n  },\n  {\n    \"variable\": \"maass_agent_conversion\",\n    \"value\": 0.25,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.052356\"\n  },\n  {\n    \"variable\": \"commission_rate\",\n    \"value\": 0.1,\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.052413\"\n  },\n  {\n    \"variable\": \"average_premium_per_household\",\n    \"value\": \"2,500\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.052442\"\n  },\n  {\n    \"variable\": \"autos_per_hh\",\n    \"value\": \"1.5\",\n    \"source\": \"global_default\",\n    \"timestamp\": \"2025-07-07T14:56:17.182620\"\n  },\n  {\n    \"variable\": \"hhs_ytd\",\n    \"value\": 4.484999999999999,\n    \"source\": \"calculated_ytd\",\n    \"timestamp\": \"2025-07-07T14:56:17.339421\"\n  }\n]",
+    "Validation Warnings": "Level 0 variable 'hhs_ytd' has no value\n\ud83d\udfe1 search_lost_IS_budget: Outside expected range: 0.0 does not meet '>= 0.20 AND <= 0.50'\n\ud83d\udfe1 hh_available: Outside expected range: 121.73290368779091 does not meet '>= 20 AND <= 60'\n\ud83d\udfe1 potential_leads: Outside expected range: 0.0 does not meet '>= 10 AND <= 150'\n\ud83d\udfe1 est_annual_commission: Outside expected range: 1121.2499999999998 does not meet '>= 200 AND <= 350'",
+    "Calculation Log": "**LEVEL 1 CALCULATIONS (3 variables):**\n\n\u2713 **website\\_hhs** = 3.36\n  Formula: = {quote_starts} x {%won_website}\n  Calculated: 28 \\* 0.12 = 3.36\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **%won\\_calls** = 0.2250\n  Formula: = {lead_to_quote_rate} x {maass_agent\\_conversion}\n  Calculated: 0.9 \\* 0.25 = 0.2250\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.35 (PASS)\n\n\u2713 **total\\_leads** = 34.00\n  Formula: = {quote_starts} + {phone_clicks} + {sms\\_clicks} + {conversions} \n  Calculated: 28 + 1 + 1 + 4 = 34.00\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND integer (PASS)\n  \u2705 Expected Range: >= 10 AND <= 65 (PASS)\n\n\n**LEVEL 2 CALCULATIONS (3 variables):**\n\n\u2713 **call\\_hhs** = 1.12\n  Formula: = ({conversions} + {phone_clicks}) x {%won_calls}\n  Calculated: (4 + 1) \\* 0.225 = 1.12\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **cost_per_lead** = 23.00\n  Formula: = {cost} / {total\\_leads}\n  Calculated: 782.0628149999999 / 34.0 = 23.00\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: <= 35 (PASS)\n\n\u2713 **hh\\_available** = 121.73\n  Formula: = {total_leads} / {search_impression\\_share}\n  Calculated: 34.0 / 0.2793 = 121.73\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 20 AND <= 60 (FAR OUTSIDE - High)\n\n\n**LEVEL 3 CALCULATIONS (2 variables):**\n\n\u2713 **hhs** = 4.48\n  Formula: = {website_hhs} + {call_hhs}\n  Calculated: 3.36 + 1.125 = 4.48\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 5 (PASS)\n\n\u2713 **potential\\_leads** = 0.0000\n  Formula: = {hh_available} x {search_lost_IS_budget}\n  Calculated: 121.73290368779091 \\* 0.0 = 0.0000\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u26a0\ufe0f Expected Range: >= 10 AND <= 150 (OUTSIDE - Low)\n\n\n**LEVEL 4 CALCULATIONS (4 variables):**\n\n\u2713 **%won** = 0.1319\n  Formula: = {hhs} / {total\\_leads}\n  Calculated: 4.484999999999999 / 34.0 = 0.1319\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 AND <= 1 (PASS)\n  \u2705 Expected Range: >= 0.09 AND <= 0.25 (PASS)\n\n\u2713 **est\\_auto** = 6.73\n  Formula: = {hhs} x {autos_per_hh}\n  Calculated: 4.484999999999999 \\* 1.5 = 6.73\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\u2713 **est_annual_commission** = 1,121.25\n  Formula: = {hhs} x {average_premium_per_household} x {commission_rate}\n  Calculated: 4.484999999999999 _ 2500.0 _ 0.1 = 1,121.25\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \ud83d\udea8 Expected Range: >= 200 AND <= 350 (FAR OUTSIDE - High)\n\n\u2713 **est\\_fire** = 3.59\n  Formula: = {hhs} x {fire_per_hh}\n  Calculated: 4.484999999999999 \\* 0.8 = 3.59\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 1 AND <= 10 (PASS)\n\n\n**LEVEL 5 CALCULATIONS (1 variables):**\n\n\u2713 **year1\\_return** = 0.4337\n  Formula: = ({est_annual_commission} - {cost}) / {cost}\n  Calculated: (1121.2499999999998 - 782.0628149999999) / 782.0628149999999 = 0.4337\n  No Fallback (calculated from available data)\n  \u2705 Valid Range: >= 0 (PASS)\n  \u2705 Expected Range: >= 0.20 AND <= 2.0 (PASS)\n\n\n**DATA QUALITY SUMMARY:**\n\n- **Total Variables:** 22\n- **Fallbacks Used:** 9\n- Global Default: 7\n- Zero Fallback: 1\n- Calculated Ytd: 1\n\n- **Validation Results:**\n- Hard Validation Pass: 22/22 (100%)\n- Within Expected Range: 18/22 (82%)\n- Outside Expected Range: 2\n- Far Outside Expected Range: 2\n\n**WARNINGS:**\n\u26a0\ufe0f **search_lost_IS\\_budget**: 0.0000 (Expected range issue)\n\u26a0\ufe0f **hh\\_available**: 121.73 (Expected range issue)\n\u26a0\ufe0f **potential\\_leads**: 0.0000 (Expected range issue)\n\u26a0\ufe0f **est_annual_commission**: 1,121.25 (Expected range issue)\n",
+    "is_full_month": [
+      true
+    ],
+    "month": [
+      "June"
+    ],
+    "year": [
+      2025
+    ],
+    "hhs_ytd_metadata": "{\n  \"reason\": \"No historical data found, using current month HHS value\",\n  \"months\": {\n    \"1\": \"missing\",\n    \"2\": \"missing\",\n    \"3\": \"missing\",\n    \"4\": \"missing\",\n    \"5\": \"missing\"\n  },\n  \"ytd_value\": 4.484999999999999,\n  \"current_month_hhs\": 4.484999999999999\n}",
+    "Last Updated": "2025-07-07T19:33:41.000Z"
+  },
+  "generated_at": "2025-07-08T11:37:43.609634"
+}

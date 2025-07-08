@@ -107,14 +107,17 @@ class ReportGenerator:
         # Special handling for date formatting
         if 'date_end' in report_data:
             date_end = report_data['date_end']
-            if isinstance(date_end, str):
-                try:
-                    dt = datetime.fromisoformat(date_end)
-                    mapping['month'] = dt.strftime("%B %Y").upper()
-                except:
-                    mapping['month'] = "RECENT"
+            # Handle if date_end is a list
+            if isinstance(date_end, list) and date_end:
+                date_end_value = date_end[0]
             else:
-                mapping['month'] = "RECENT"
+                date_end_value = date_end
+            if isinstance(date_end_value, str):
+                try:
+                    dt = datetime.fromisoformat(date_end_value)
+                    mapping['month'] = dt.strftime("%B %Y").upper()
+                except Exception:
+                    pass  # Do not set 'month' if parsing fails
         
         # Handle monthly HHS data from YTD metadata
         self._process_monthly_hhs_data(report_data, mapping)
