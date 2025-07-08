@@ -1,0 +1,299 @@
+{
+  "timestamp": "2025-07-02T13:25:36.862764",
+  "summary": {
+    "total_variables": 30,
+    "input_variables": [
+      "lead_to_quote_rate",
+      "sms_clicks",
+      "hhs_ytd",
+      "%won_website",
+      "quote_starts",
+      "search_lost_IS_budget",
+      "fire_per_hh",
+      "cost",
+      "maass_agent_conversion",
+      "commission_rate",
+      "search_impression_share",
+      "client_headshot",
+      "conversions",
+      "phone_clicks",
+      "average_premium_per_household",
+      "client_name",
+      "autos_per_hh"
+    ],
+    "calculated_variables": [
+      "%won",
+      "potential_leads",
+      "hhs",
+      "%won_calls",
+      "est_auto",
+      "website_hhs",
+      "call_hhs",
+      "cost_per_lead",
+      "est_annual_commission",
+      "hh_available",
+      "year1_return",
+      "total_leads",
+      "est_fire"
+    ],
+    "max_depth": 5,
+    "circular_dependencies": 0
+  },
+  "calculation_order": {
+    "level_0": [
+      "lead_to_quote_rate",
+      "sms_clicks",
+      "hhs_ytd",
+      "%won_website",
+      "quote_starts",
+      "search_lost_IS_budget",
+      "fire_per_hh",
+      "cost",
+      "maass_agent_conversion",
+      "commission_rate",
+      "search_impression_share",
+      "client_headshot",
+      "conversions",
+      "phone_clicks",
+      "average_premium_per_household",
+      "client_name",
+      "autos_per_hh"
+    ],
+    "level_1": [
+      "website_hhs",
+      "%won_calls",
+      "total_leads"
+    ],
+    "level_2": [
+      "call_hhs",
+      "cost_per_lead",
+      "hh_available"
+    ],
+    "level_3": [
+      "hhs",
+      "potential_leads"
+    ],
+    "level_4": [
+      "%won",
+      "est_auto",
+      "est_annual_commission",
+      "est_fire"
+    ],
+    "level_5": [
+      "year1_return"
+    ]
+  },
+  "variable_levels": {
+    "lead_to_quote_rate": 0,
+    "sms_clicks": 0,
+    "hhs_ytd": 0,
+    "%won_website": 0,
+    "quote_starts": 0,
+    "search_lost_IS_budget": 0,
+    "fire_per_hh": 0,
+    "cost": 0,
+    "maass_agent_conversion": 0,
+    "commission_rate": 0,
+    "search_impression_share": 0,
+    "client_headshot": 0,
+    "conversions": 0,
+    "phone_clicks": 0,
+    "average_premium_per_household": 0,
+    "client_name": 0,
+    "autos_per_hh": 0,
+    "website_hhs": 1,
+    "%won_calls": 1,
+    "total_leads": 1,
+    "call_hhs": 2,
+    "cost_per_lead": 2,
+    "hh_available": 2,
+    "hhs": 3,
+    "potential_leads": 3,
+    "%won": 4,
+    "est_auto": 4,
+    "est_annual_commission": 4,
+    "est_fire": 4,
+    "year1_return": 5
+  },
+  "critical_variables": [],
+  "circular_dependencies": [],
+  "dependency_graph": {
+    "lead_to_quote_rate": [],
+    "sms_clicks": [],
+    "hhs_ytd": [],
+    "%won": [
+      "hhs",
+      "total_leads"
+    ],
+    "%won_website": [],
+    "potential_leads": [
+      "hh_available",
+      "search_lost_IS_budget"
+    ],
+    "hhs": [
+      "website_hhs",
+      "call_hhs"
+    ],
+    "%won_calls": [
+      "lead_to_quote_rate",
+      "maass_agent_conversion"
+    ],
+    "quote_starts": [],
+    "search_lost_IS_budget": [],
+    "fire_per_hh": [],
+    "cost": [],
+    "est_auto": [
+      "hhs",
+      "autos_per_hh"
+    ],
+    "maass_agent_conversion": [],
+    "website_hhs": [
+      "%won_website",
+      "quote_starts"
+    ],
+    "commission_rate": [],
+    "search_impression_share": [],
+    "call_hhs": [
+      "%won_calls",
+      "phone_clicks",
+      "conversions"
+    ],
+    "cost_per_lead": [
+      "cost",
+      "total_leads"
+    ],
+    "client_headshot": [],
+    "est_annual_commission": [
+      "hhs",
+      "average_premium_per_household",
+      "commission_rate"
+    ],
+    "hh_available": [
+      "search_impression_share",
+      "total_leads"
+    ],
+    "conversions": [],
+    "phone_clicks": [],
+    "average_premium_per_household": [],
+    "year1_return": [
+      "est_annual_commission",
+      "cost"
+    ],
+    "total_leads": [
+      "quote_starts",
+      "phone_clicks",
+      "sms_clicks",
+      "conversions"
+    ],
+    "est_fire": [
+      "hhs",
+      "fire_per_hh"
+    ],
+    "client_name": [],
+    "autos_per_hh": []
+  },
+  "reverse_dependencies": {
+    "lead_to_quote_rate": [
+      "%won_calls",
+      "%won_calls"
+    ],
+    "sms_clicks": [
+      "total_leads",
+      "total_leads"
+    ],
+    "hhs": [
+      "%won",
+      "est_auto",
+      "est_fire",
+      "est_annual_commission",
+      "%won",
+      "est_auto",
+      "est_annual_commission",
+      "est_fire"
+    ],
+    "total_leads": [
+      "%won",
+      "cost_per_lead",
+      "hh_available",
+      "%won",
+      "hh_available",
+      "cost_per_lead"
+    ],
+    "%won_website": [
+      "website_hhs",
+      "website_hhs"
+    ],
+    "hh_available": [
+      "potential_leads",
+      "potential_leads"
+    ],
+    "search_lost_IS_budget": [
+      "potential_leads",
+      "potential_leads"
+    ],
+    "website_hhs": [
+      "hhs",
+      "hhs"
+    ],
+    "call_hhs": [
+      "hhs",
+      "hhs"
+    ],
+    "%won_calls": [
+      "call_hhs",
+      "call_hhs"
+    ],
+    "maass_agent_conversion": [
+      "%won_calls",
+      "%won_calls"
+    ],
+    "quote_starts": [
+      "website_hhs",
+      "total_leads",
+      "website_hhs",
+      "total_leads"
+    ],
+    "fire_per_hh": [
+      "est_fire",
+      "est_fire"
+    ],
+    "cost": [
+      "year1_return",
+      "cost_per_lead",
+      "cost_per_lead",
+      "year1_return"
+    ],
+    "autos_per_hh": [
+      "est_auto",
+      "est_auto"
+    ],
+    "commission_rate": [
+      "est_annual_commission",
+      "est_annual_commission"
+    ],
+    "search_impression_share": [
+      "hh_available",
+      "hh_available"
+    ],
+    "phone_clicks": [
+      "call_hhs",
+      "call_hhs",
+      "total_leads",
+      "total_leads"
+    ],
+    "conversions": [
+      "call_hhs",
+      "call_hhs",
+      "total_leads",
+      "total_leads"
+    ],
+    "est_annual_commission": [
+      "year1_return",
+      "year1_return"
+    ],
+    "average_premium_per_household": [
+      "est_annual_commission",
+      "est_annual_commission"
+    ]
+  }
+}
