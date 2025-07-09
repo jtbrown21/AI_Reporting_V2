@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-07-02T13:25:36.862764",
+  "timestamp": "2025-07-09T08:41:48.714133",
   "summary": {
-    "total_variables": 30,
+    "total_variables": 33,
     "input_variables": [
       "lead_to_quote_rate",
       "sms_clicks",
-      "hhs_ytd",
       "%won_website",
+      "auto_average_premium",
       "quote_starts",
       "search_lost_IS_budget",
       "fire_per_hh",
@@ -15,16 +15,18 @@
       "commission_rate",
       "search_impression_share",
       "client_headshot",
+      "homeowner_average_premium",
       "conversions",
       "phone_clicks",
-      "average_premium_per_household",
       "client_name",
       "autos_per_hh"
     ],
     "calculated_variables": [
+      "hhs_ytd",
       "%won",
       "potential_leads",
       "hhs",
+      "new_hh_cost",
       "%won_calls",
       "est_auto",
       "website_hhs",
@@ -32,6 +34,7 @@
       "cost_per_lead",
       "est_annual_commission",
       "hh_available",
+      "average_premium_per_household",
       "year1_return",
       "total_leads",
       "est_fire"
@@ -43,8 +46,8 @@
     "level_0": [
       "lead_to_quote_rate",
       "sms_clicks",
-      "hhs_ytd",
       "%won_website",
+      "auto_average_premium",
       "quote_starts",
       "search_lost_IS_budget",
       "fire_per_hh",
@@ -53,16 +56,17 @@
       "commission_rate",
       "search_impression_share",
       "client_headshot",
+      "homeowner_average_premium",
       "conversions",
       "phone_clicks",
-      "average_premium_per_household",
       "client_name",
       "autos_per_hh"
     ],
     "level_1": [
       "website_hhs",
       "%won_calls",
-      "total_leads"
+      "total_leads",
+      "average_premium_per_household"
     ],
     "level_2": [
       "call_hhs",
@@ -74,20 +78,22 @@
       "potential_leads"
     ],
     "level_4": [
+      "hhs_ytd",
       "%won",
       "est_auto",
       "est_annual_commission",
       "est_fire"
     ],
     "level_5": [
+      "new_hh_cost",
       "year1_return"
     ]
   },
   "variable_levels": {
     "lead_to_quote_rate": 0,
     "sms_clicks": 0,
-    "hhs_ytd": 0,
     "%won_website": 0,
+    "auto_average_premium": 0,
     "quote_starts": 0,
     "search_lost_IS_budget": 0,
     "fire_per_hh": 0,
@@ -96,23 +102,26 @@
     "commission_rate": 0,
     "search_impression_share": 0,
     "client_headshot": 0,
+    "homeowner_average_premium": 0,
     "conversions": 0,
     "phone_clicks": 0,
-    "average_premium_per_household": 0,
     "client_name": 0,
     "autos_per_hh": 0,
     "website_hhs": 1,
     "%won_calls": 1,
     "total_leads": 1,
+    "average_premium_per_household": 1,
     "call_hhs": 2,
     "cost_per_lead": 2,
     "hh_available": 2,
     "hhs": 3,
     "potential_leads": 3,
+    "hhs_ytd": 4,
     "%won": 4,
     "est_auto": 4,
     "est_annual_commission": 4,
     "est_fire": 4,
+    "new_hh_cost": 5,
     "year1_return": 5
   },
   "critical_variables": [],
@@ -120,7 +129,9 @@
   "dependency_graph": {
     "lead_to_quote_rate": [],
     "sms_clicks": [],
-    "hhs_ytd": [],
+    "hhs_ytd": [
+      "hhs"
+    ],
     "%won": [
       "hhs",
       "total_leads"
@@ -130,9 +141,14 @@
       "hh_available",
       "search_lost_IS_budget"
     ],
+    "auto_average_premium": [],
     "hhs": [
       "website_hhs",
       "call_hhs"
+    ],
+    "new_hh_cost": [
+      "cost_per_lead",
+      "%won"
     ],
     "%won_calls": [
       "lead_to_quote_rate",
@@ -168,13 +184,19 @@
       "average_premium_per_household",
       "commission_rate"
     ],
+    "homeowner_average_premium": [],
     "hh_available": [
       "search_impression_share",
       "total_leads"
     ],
     "conversions": [],
     "phone_clicks": [],
-    "average_premium_per_household": [],
+    "average_premium_per_household": [
+      "auto_average_premium",
+      "autos_per_hh",
+      "homeowner_average_premium",
+      "fire_per_hh"
+    ],
     "year1_return": [
       "est_annual_commission",
       "cost"
@@ -202,6 +224,7 @@
       "total_leads"
     ],
     "hhs": [
+      "hhs_ytd",
       "%won",
       "est_auto",
       "est_fire",
@@ -239,6 +262,12 @@
       "hhs",
       "hhs"
     ],
+    "cost_per_lead": [
+      "new_hh_cost"
+    ],
+    "%won": [
+      "new_hh_cost"
+    ],
     "%won_calls": [
       "call_hhs",
       "call_hhs"
@@ -255,6 +284,7 @@
     ],
     "fire_per_hh": [
       "est_fire",
+      "average_premium_per_household",
       "est_fire"
     ],
     "cost": [
@@ -265,6 +295,7 @@
     ],
     "autos_per_hh": [
       "est_auto",
+      "average_premium_per_household",
       "est_auto"
     ],
     "commission_rate": [
@@ -294,6 +325,12 @@
     "average_premium_per_household": [
       "est_annual_commission",
       "est_annual_commission"
+    ],
+    "auto_average_premium": [
+      "average_premium_per_household"
+    ],
+    "homeowner_average_premium": [
+      "average_premium_per_household"
     ]
   }
 }

@@ -40,9 +40,20 @@ except Exception as e:
     print(f"✗ Error fetching records from Airtable: {e}")
     exit(1)
 
+# Load previous variables for change detection
+PREVIOUS_VARS_FILE = 'previous_variables.json'
+try:
+    with open(PREVIOUS_VARS_FILE, 'r') as f:
+        previous_vars = set(json.load(f))
+except Exception:
+    previous_vars = set()
+
 # Build updates
 updates = []
 level_counts = {}
+current_vars = set(variable_levels.keys())
+new_vars = current_vars - previous_vars
+
 for record in records:
     var_id = record['fields'].get('Variable_ID')
     if var_id in variable_levels:
@@ -56,6 +67,10 @@ for record in records:
         })
         level_counts[level_str] = level_counts.get(level_str, 0) + 1
 
+# Save current variables for next run
+with open(PREVIOUS_VARS_FILE, 'w') as f:
+    json.dump(sorted(list(current_vars)), f, indent=2)
+
 # Batch update
 if updates:
     try:
@@ -63,6 +78,10 @@ if updates:
         print(f"✓ Updated {len(updates)} records in Airtable.")
         for lvl, count in sorted(level_counts.items()):
             print(f"  {lvl}: {count} records")
+        if new_vars:
+            print("New variables added since last run:")
+            for var in sorted(new_vars):
+                print(f"  - {var}")
     except Exception as e:
         print(f"✗ Error updating records in Airtable: {e}")
 else:

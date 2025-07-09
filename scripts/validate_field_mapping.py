@@ -61,16 +61,16 @@ def validate_field_mapping():
 
     primary_field_name = list(report_vars[0]['fields'].keys())[0]
     
-    # Get Generated_Reports field names by fetching a sample record (if any)
+    # Get Generated_Reports field names by fetching multiple records (union of all fields)
     generated_reports_table = base.table(GENERATED_REPORTS_TABLE)
     try:
-        records = generated_reports_table.all(max_records=1)
-        if records and 'fields' in records[0] and records[0]['fields']:
-            generated_fields = list(records[0]['fields'].keys())
-            print(f"✓ Found {len(generated_fields)} fields in Generated_Reports")
-        else:
-            generated_fields = []
-            print(f"✓ Found 0 fields in Generated_Reports")
+        records = generated_reports_table.all(max_records=100)  # Fetch up to 100 records
+        generated_fields_set = set()
+        for rec in records:
+            if 'fields' in rec and rec['fields']:
+                generated_fields_set.update(rec['fields'].keys())
+        generated_fields = list(generated_fields_set)
+        print(f"✓ Found {len(generated_fields)} unique fields in Generated_Reports (across {len(records)} records)")
     except Exception as e:
         print(f"✗ Error getting Generated_Reports fields: {e}")
         return

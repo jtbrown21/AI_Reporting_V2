@@ -1,6 +1,19 @@
 # AI_Reporting_V2
 Codebase for V2 of AI Reporting
 
+## Recent Updates
+
+### Field Mapping Validation Script
+- Improved robustness: Now checks the union of all field names across multiple records in the `Generated_Reports` table, not just the first record. This prevents false missing-field errors when fields are empty in some records.
+
+### Airtable Dependency Updater
+- Enhancement: Now prints a list of any new variables added since the last run, in addition to the level and record count. Tracks previous variables in `previous_variables.json` for accurate change detection.
+
+### General Workflow
+- When adding new variables, always run the dependency updater and analyzer before validating field mappings to ensure all mappings and dependencies are up-to-date.
+
+---
+
 ## Project Structure
 
 ```
