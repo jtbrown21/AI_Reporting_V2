@@ -1,0 +1,51 @@
+{
+  "report_id": "reccNSoJ9evk5s0PE",
+  "client_name": "Test Client",
+  "validation_results": {
+    "valid": false,
+    "errors": [
+      "Missing required field: client_name",
+      "Missing required field: hhs",
+      "Missing required field: est_auto",
+      "Missing required field: est_fire",
+      "Missing required field: est_annual_commission"
+    ],
+    "warnings": [],
+    "field_mappings": {
+      "RID": "14",
+      "record_id": "reccNSoJ9evk5s0PE",
+      "Calculation Log": "\n",
+      "Last Updated": "2025-07-09T15:35:45.000Z",
+      "hhs_jan": "",
+      "hhs_feb": "",
+      "hhs_mar": "",
+      "hhs_apr": "",
+      "hhs_may": "",
+      "hhs_jun": "",
+      "hhs_jul": "",
+      "hhs_aug": "",
+      "hhs_sep": "",
+      "hhs_oct": "",
+      "hhs_nov": "",
+      "hhs_dec": "",
+      "lead-share": "",
+      "lead-share-bar": ""
+    },
+    "missing_fields": [
+      "client_name",
+      "hhs",
+      "est_auto",
+      "est_fire",
+      "est_annual_commission"
+    ],
+    "extra_fields": [],
+    "formatted_values": {}
+  },
+  "report_data": {
+    "RID": 14,
+    "record_id": "reccNSoJ9evk5s0PE",
+    "Calculation Log": "\n",
+    "Last Updated": "2025-07-09T15:35:45.000Z"
+  },
+  "generated_at": "2025-07-09T11:35:47.745345"
+}

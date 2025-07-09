@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Report Generator for Automated HTML Report Generation
 

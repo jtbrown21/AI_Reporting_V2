@@ -12,6 +12,7 @@ This script:
 import os
 import re
 import json
+import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import Dict, Tuple, Optional, Any, List
@@ -101,6 +102,13 @@ class CalculationContext:
         self.ytd_metadata = {}
         self.validation_flags = []
         self.expected_flags = []
+        
+        # Extract client_record_id for YTD queries
+        client_record_id = report_record['fields'].get('client_record_id')
+        if isinstance(client_record_id, list):
+            self.client_record_id = client_record_id[0] if client_record_id else None
+        else:
+            self.client_record_id = client_record_id
         
         # Extract report month and year from date_end
         date_end = self.date_end
@@ -217,31 +225,75 @@ def load_global_variables() -> Dict[str, Any]:
 def find_previous_period_value(
     variable: str, 
     client_id: str, 
-    current_date: datetime, 
-    max_months: int
+    current_date_end: datetime, 
+    max_months: int,
+    current_date_start: Optional[datetime] = None
 ) -> Optional[Any]:
     """Find value from previous report within max_months"""
     table = base.table(GENERATED_REPORTS_TABLE)
     
-    # Calculate date range
-    min_date = current_date - timedelta(days=max_months * 30)
+    # Calculate date range - go back max_months * 30 days from current date
+    min_date = current_date_end - timedelta(days=max_months * 30)
     
-    # Query for previous reports
-    # Note: Airtable formula to filter by client and date range
-    # Ensure client_id is a string (not a list) for Airtable formula
-    client_id = client_id
+    # Normalize client_id to string for comparison
     if isinstance(client_id, list):
         client_id = client_id[0] if client_id else ""
     if client_id is None:
         client_id = ""
-    print(f"DEBUG: client_id for formula: {client_id!r}")
-    formula = f"AND({{Client}}='{client_id}', {{date_end}}<'{current_date.date().isoformat()}', {{date_end}}>'{min_date.date().isoformat()}')"
+    
+    # Use date_start if available, otherwise fall back to date_end
+    comparison_date = current_date_start if current_date_start else current_date_end
+    
     try:
-        records = table.all(formula=formula, sort=['-date_end'])
+        # Get all records without formula filtering (to avoid lookup field issues)
+        all_records = table.all(fields=['client', 'date_end', 'date_start', 'is_full_month', variable])
         
-        for record in records:
+        # Filter in Python for better lookup field handling
+        matching_records = []
+        for record in all_records:
+            fields = record['fields']
+            
+            # Check client match (handle both single values and arrays)
+            client_field = fields.get('client')
+            client_match = False
+            if client_field:
+                if isinstance(client_field, list):
+                    client_match = client_id in client_field
+                else:
+                    client_match = client_field == client_id
+            
+            if not client_match:
+                continue
+            
+            # Check is_full_month
+            is_full_month = fields.get('is_full_month')
+            if isinstance(is_full_month, list):
+                is_full_month = is_full_month[0] if is_full_month else False
+            if not is_full_month:
+                continue
+            
+            # Check date_end is within range
+            date_end = fields.get('date_end')
+            if isinstance(date_end, list):
+                date_end = date_end[0] if date_end else None
+            if date_end:
+                if isinstance(date_end, str):
+                    date_end_dt = datetime.fromisoformat(date_end)
+                else:
+                    date_end_dt = date_end
+                
+                # Must be before comparison date and after min_date
+                if date_end_dt < comparison_date and date_end_dt > min_date:
+                    matching_records.append((record, date_end_dt))
+        
+        # Sort by date_end descending (most recent first)
+        matching_records.sort(key=lambda x: x[1], reverse=True)
+        
+        # Find first record with the requested variable
+        for record, _ in matching_records:
             if variable in record['fields'] and record['fields'][variable] is not None:
                 return record['fields'][variable]
+                
     except Exception as e:
         print(f"Error searching previous periods: {e}")
     
@@ -264,8 +316,7 @@ def apply_fallback(
         return 0, "zero_fallback"
     
     elif fallback_type == "previous_period":
-        # Ensure context.date_end is a string before parsing
-        # Safely handle lookup field for date_end
+        # Safely handle lookup field for date_end and date_start
         date_end = context.date_end
         if isinstance(date_end, list):
             date_end = date_end[0] if date_end else None
@@ -275,11 +326,24 @@ def apply_fallback(
             dt_date_end = datetime.fromisoformat(date_end)
         else:
             return None, "invalid_date_end"
+        
+        # Get date_start for improved filtering
+        date_start = context.date_start
+        if isinstance(date_start, list):
+            date_start = date_start[0] if date_start else None
+        dt_date_start = None
+        if date_start:
+            if isinstance(date_start, datetime):
+                dt_date_start = date_start
+            elif isinstance(date_start, str) and date_start:
+                dt_date_start = datetime.fromisoformat(date_start)
+        
         value = find_previous_period_value(
             variable,
             context.client_id,
             dt_date_end,
-            max_periods
+            max_periods,
+            dt_date_start
         )
         if value is not None:
             return value, f"previous_period({max_periods}mo)"
@@ -507,7 +571,18 @@ def calculate_ytd_value(context, base_variable='hhs'):
     """
     Calculate YTD for a variable using only previous full months
     Returns: (value, metadata_dict)
+    
+    Improved version with better error handling and debugging
     """
+    
+    print(f"\n=== YTD CALCULATION DEBUG ===")
+    print(f"Base variable: {base_variable}")
+    print(f"Context client_id: {context.client_id}")
+    print(f"Context client_record_id: {context.client_record_id}")
+    print(f"Context report_month: {context.report_month}")
+    print(f"Context report_year: {context.report_year}")
+    print(f"Context date_start: {context.date_start}")
+    print(f"Context date_end: {context.date_end}")
     
     # Only calculate for previous complete months (not current)
     previous_months = list(range(1, context.report_month)) if context.report_month else []
@@ -515,6 +590,7 @@ def calculate_ytd_value(context, base_variable='hhs'):
     if not previous_months:
         # For January or when no previous months exist, use current month's HHS value
         current_hhs = context.get_value('hhs')
+        print(f"No previous months found. Current HHS: {current_hhs}")
         if current_hhs is not None:
             return current_hhs, {
                 'reason': 'No previous months in current year, using current month HHS value',
@@ -529,103 +605,246 @@ def calculate_ytd_value(context, base_variable='hhs'):
                 'ytd_value': 0
             }
     
-    # Query for all previous full month reports
-    # Convert current month number to month name for comparison
-    month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
-                   'July', 'August', 'September', 'October', 'November', 'December']
-    current_month_name = month_names[context.report_month - 1] if context.report_month else None
+    print(f"Looking for previous months: {previous_months}")
     
-    # Get previous month names for filtering
-    previous_month_names = [month_names[i - 1] for i in previous_months]
-    
-    # Note: client field contains record IDs, so we need to check if our client_id is in the array
-    formula = f"""AND(
-        FIND('{context.client_id}', ARRAYJOIN({{client}})),
-        FIND('{context.report_year}', ARRAYJOIN({{year}})),
-        {{is_full_month}}=TRUE(),
-        OR({','.join([f"{{month}}='{month_name}'" for month_name in previous_month_names])})
-    )"""
+    # Get all records from Generated_Reports table without complex filtering
+    # We'll filter in Python for better control and debugging
+    table = base.table(GENERATED_REPORTS_TABLE)
     
     try:
-        table = base.table(GENERATED_REPORTS_TABLE)
-        historical_records = table.all(
-            formula=formula,
-            fields=['month', base_variable],
-            sort=['month']
-        )
-    except Exception as e:
-        context.errors.append(f"Error querying historical data: {e}")
-        return "No Data", {'reason': 'Query failed'}
-    
-    # Build month data
-    months_with_data = {}
-    for record in historical_records:
-        month = record['fields'].get('month')
-        value = record['fields'].get(base_variable)
+        print("Fetching all Generated_Reports records...")
+        all_records = table.all(fields=[
+            'client', 'client_record_id', 'month', 'year', 'is_full_month', 
+            'date_start', 'date_end', base_variable
+        ])
+        print(f"Retrieved {len(all_records)} total records")
         
-        # Handle lookup fields (arrays)
-        if isinstance(month, list):
-            month = month[0] if month else None
-        if isinstance(value, list):
-            value = value[0] if value else None
+        # Filter records step by step with detailed logging
+        matching_records = []
+        
+        for i, record in enumerate(all_records):
+            fields = record['fields']
+            record_id = record['id']
             
-        # Convert month name to number if needed
-        if month and isinstance(month, str):
-            month_names = {
-                'January': 1, 'February': 2, 'March': 3, 'April': 4,
-                'May': 5, 'June': 6, 'July': 7, 'August': 8,
-                'September': 9, 'October': 10, 'November': 11, 'December': 12
-            }
-            month = month_names.get(month, month)
+            # Debug first few records
+            if i < 5:
+                print(f"\nRecord {i+1} ({record_id}):")
+                print(f"  client: {fields.get('client')}")
+                print(f"  client_record_id: {fields.get('client_record_id')}")
+                print(f"  month: {fields.get('month')}")
+                print(f"  year: {fields.get('year')}")
+                print(f"  is_full_month: {fields.get('is_full_month')}")
+                print(f"  {base_variable}: {fields.get(base_variable)}")
             
-        if month and value is not None:
-            months_with_data[month] = value
-    
-    # Check if we have any data
-    if not months_with_data:
-        # Fallback: Use current month's HHS value as YTD when no historical data available
+            # Step 1: Check client match
+            client_match = False
+            client_field = fields.get('client')
+            client_record_id_field = fields.get('client_record_id')
+            
+            # Try multiple ways to match client
+            if context.client_record_id:
+                # Method 1: Direct client_record_id match
+                if client_record_id_field:
+                    if isinstance(client_record_id_field, list):
+                        client_match = context.client_record_id in client_record_id_field
+                    else:
+                        client_match = client_record_id_field == context.client_record_id
+                
+                # Method 2: client field match (fallback)
+                if not client_match and client_field:
+                    if isinstance(client_field, list):
+                        client_match = context.client_record_id in client_field
+                    else:
+                        client_match = client_field == context.client_record_id
+            
+            # Method 3: Use context.client_id as fallback
+            if not client_match and context.client_id and client_field:
+                if isinstance(client_field, list):
+                    client_match = context.client_id in client_field
+                else:
+                    client_match = client_field == context.client_id
+            
+            if not client_match:
+                continue
+            
+            # Step 2: Check year match
+            year_match = False
+            year_field = fields.get('year')
+            if year_field:
+                if isinstance(year_field, list):
+                    year_match = str(context.report_year) in [str(y) for y in year_field]
+                else:
+                    year_match = str(year_field) == str(context.report_year)
+            
+            if not year_match:
+                continue
+            
+            # Step 3: Check is_full_month
+            is_full_month = fields.get('is_full_month')
+            if isinstance(is_full_month, list):
+                is_full_month = is_full_month[0] if is_full_month else False
+            if not is_full_month:
+                continue
+            
+            # Step 4: Check month is in previous months
+            month_field = fields.get('month')
+            month_num = None
+            
+            if month_field:
+                if isinstance(month_field, list):
+                    month_field = month_field[0] if month_field else None
+                
+                # Convert month name to number if needed
+                if isinstance(month_field, str):
+                    month_names = {
+                        'January': 1, 'February': 2, 'March': 3, 'April': 4,
+                        'May': 5, 'June': 6, 'July': 7, 'August': 8,
+                        'September': 9, 'October': 10, 'November': 11, 'December': 12
+                    }
+                    month_num = month_names.get(month_field)
+                else:
+                    try:
+                        month_num = int(month_field) if month_field is not None else None
+                    except (ValueError, TypeError):
+                        continue
+            
+            if month_num not in previous_months:
+                continue
+            
+            # Step 5: Check if variable has a value
+            variable_value = fields.get(base_variable)
+            if variable_value is None:
+                continue
+            
+            # Handle lookup fields
+            if isinstance(variable_value, list):
+                variable_value = variable_value[0] if variable_value else None
+            
+            if variable_value is None:
+                continue
+            
+            # Record passed all filters
+            matching_records.append({
+                'record_id': record_id,
+                'month': month_num,
+                'value': variable_value,
+                'fields': fields
+            })
+        
+        print(f"\nFound {len(matching_records)} matching records after filtering")
+        
+        # Build month data
+        months_with_data = {}
+        for record in matching_records:
+            month = record['month']
+            value = record['value']
+            print(f"  Month {month}: {value}")
+            
+            # Convert value to numeric if needed
+            try:
+                if isinstance(value, str):
+                    value = float(value.replace(',', '').replace('$', ''))
+                else:
+                    value = float(value)
+                months_with_data[month] = value
+            except (ValueError, TypeError):
+                print(f"  Warning: Could not convert value '{value}' to numeric for month {month}")
+                continue
+        
+        print(f"\nMonths with valid data: {months_with_data}")
+        
+        # Check if we have any data
+        if not months_with_data:
+            # Fallback: Use current month's HHS value as YTD when no historical data available
+            current_hhs = context.get_value('hhs')
+            print(f"No historical data found. Current HHS: {current_hhs}")
+            
+            if current_hhs is not None:
+                # Still show which months were checked but had no data
+                month_details = {}
+                for month in previous_months:
+                    month_details[str(month)] = "missing"
+                
+                return current_hhs, {
+                    'reason': 'No historical data found, using current month HHS value',
+                    'months': month_details,
+                    'ytd_value': current_hhs,
+                    'current_month_hhs': current_hhs
+                }
+            else:
+                # No historical data AND no current HHS value
+                month_details = {}
+                for month in previous_months:
+                    month_details[str(month)] = "missing"
+                
+                return "No Data", {
+                    'reason': 'No historical data and no current month HHS value available',
+                    'months': month_details,
+                    'ytd_value': 0
+                }
+        
+        # Calculate YTD - sum previous months plus current month
+        previous_months_total = sum(months_with_data.values())
+        print(f"Previous months total: {previous_months_total}")
+        
+        # Add current month's HHS value
         current_hhs = context.get_value('hhs')
+        print(f"Current month HHS: {current_hhs}")
+        
         if current_hhs is not None:
-            # Still show which months were checked but had no data
-            month_details = {}
-            for month in previous_months:
-                month_details[str(month)] = "missing"
-            
-            return current_hhs, {
-                'reason': 'No historical data found, using current month HHS value',
-                'months': month_details,
-                'ytd_value': current_hhs,
-                'current_month_hhs': current_hhs
-            }
+            try:
+                # Convert current HHS to numeric if needed
+                if isinstance(current_hhs, str):
+                    current_hhs_numeric = float(current_hhs.replace(',', '').replace('$', ''))
+                else:
+                    current_hhs_numeric = float(current_hhs)
+                
+                ytd_total = previous_months_total + current_hhs_numeric
+                print(f"YTD Total (previous + current): {ytd_total}")
+            except (ValueError, TypeError):
+                print(f"Warning: Could not convert current HHS '{current_hhs}' to numeric, using only previous months")
+                ytd_total = previous_months_total
         else:
-            # No historical data AND no current HHS value
-            month_details = {}
-            for month in previous_months:
+            print("Warning: No current month HHS value available, using only previous months")
+            ytd_total = previous_months_total
+        
+        # Build simplified metadata - show each month with its value or "missing"
+        month_details = {}
+        for month in previous_months:
+            if month in months_with_data:
+                month_details[str(month)] = months_with_data[month]
+            else:
                 month_details[str(month)] = "missing"
-            
-            return "No Data", {
-                'reason': 'No historical data and no current month HHS value available',
-                'months': month_details,
-                'ytd_value': 0
+        
+        # Add current month to metadata
+        if current_hhs is not None:
+            month_details[str(context.report_month)] = current_hhs
+        
+        metadata = {
+            'months': month_details,
+            'ytd_value': ytd_total,
+            'debug_info': {
+                'total_records_checked': len(all_records),
+                'matching_records_found': len(matching_records),
+                'months_with_data': list(months_with_data.keys()),
+                'client_matching_method': 'client_record_id' if context.client_record_id else 'client_id'
             }
-    
-    # Calculate YTD
-    ytd_total = sum(months_with_data.values())
-    
-    # Build simplified metadata - show each month with its value or "missing"
-    month_details = {}
-    for month in previous_months:
-        if month in months_with_data:
-            month_details[str(month)] = months_with_data[month]
-        else:
-            month_details[str(month)] = "missing"
-    
-    metadata = {
-        'months': month_details,
-        'ytd_value': ytd_total
-    }
-    
-    return ytd_total, metadata
+        }
+        
+        print(f"=== YTD CALCULATION COMPLETE ===\n")
+        return ytd_total, metadata
+        
+    except Exception as e:
+        print(f"ERROR in YTD calculation: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        context.errors.append(f"Error in YTD calculation: {e}")
+        return "No Data", {
+            'reason': f'YTD calculation failed: {str(e)}',
+            'months': {},
+            'ytd_value': 0
+        }
 
 
 def calculate_all_variables(
@@ -839,14 +1058,14 @@ def write_to_generated_reports(
     # Note: Metadata fields like 'Fallback Details', 'Validation Warnings', etc.
     # are commented out because they may not exist in the actual Airtable schema
     
-    # # Add fallback details
-    # if context.fallback_log:
-    #     fallback_summary = json.dumps(context.fallback_log, indent=2)
-    #     report_fields['Fallback Details'] = fallback_summary[:50000]  # Airtable text limit
+    # Add fallback details
+    if context.fallback_log:
+        fallback_summary = json.dumps(context.fallback_log, indent=2)
+        report_fields['Fallback Details'] = fallback_summary[:50000]  # Airtable text limit
     
-    # # Add any warnings
-    # if context.warnings:
-    #     report_fields['Validation Warnings'] = '\n'.join(context.warnings)
+    # Add any warnings
+    if context.warnings:
+        report_fields['Validation Warnings'] = '\n'.join(context.warnings)
     # Format calculation log as a comprehensive report for Airtable
     def format_calc_log(log):
         output = []
@@ -1092,13 +1311,13 @@ def write_to_generated_reports(
     # Note: Calculation Log and YTD metadata fields are commented out
     # because they may not exist in the actual Airtable schema
     
-    # # Add calculation log to the update in formatted text
-    # report_fields['Calculation Log'] = format_calc_log(context.calculation_log)[:50000]  # Airtable text limit
+    # Add calculation log to the update in formatted text
+    report_fields['Calculation Log'] = format_calc_log(context.calculation_log)[:50000]  # Airtable text limit
     
-    # # Add YTD metadata field
-    # if 'hhs_ytd' in context.ytd_metadata:
-    #     metadata = context.ytd_metadata['hhs_ytd']
-    #     report_fields['hhs_ytd_metadata'] = json.dumps(metadata, indent=2)[:50000]  # Airtable text limit
+    # Add YTD metadata field
+    if 'hhs_ytd' in context.ytd_metadata:
+        metadata = context.ytd_metadata['hhs_ytd']
+        report_fields['hhs_ytd_metadata'] = json.dumps(metadata, indent=2)[:50000]  # Airtable text limit
     
     try:
         # Filter out fields that are known to be read-only or lookup fields
