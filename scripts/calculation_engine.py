@@ -288,6 +288,10 @@ def apply_fallback(
         if variable in global_vars:
             return global_vars[variable], "global_default"
     
+    elif fallback_type == "calculation":
+        # Try to calculate using the variable's formula
+        return None, "calculation_needed"  # Signal that calculation should be attempted
+    
     return None, f"fallback_failed({fallback_type})"
 
 
@@ -299,11 +303,40 @@ def resolve_value(
 ) -> Optional[Any]:
     """Resolve a value using fallback chain if needed"""
     
-    # First check if we already have the value
+    # Special logic for client_static variables - check before fallbacks AND before existing values
+    source_type = var_config.get('fields', {}).get('Source_Type', '').lower()
+    if source_type == 'client_static':
+        # Look up value in Client_Variables for this client
+        client_id = context.client_id
+        client_table = base.table(CLIENT_VARIABLES_TABLE)
+        try:
+            client_record = client_table.get(client_id)
+            if client_record and variable in client_record['fields']:
+                client_value = client_record['fields'][variable]
+                # Convert value to correct type using Data_Type from Report_Variables
+                data_type = var_config.get('fields', {}).get('Data_Type', 'number')
+                if data_type in ('number', 'currency', 'percentage'):
+                    try:
+                        if data_type == 'percentage':
+                            client_value = float(client_value) / 100
+                        else:
+                            client_value = float(client_value)
+                    except Exception:
+                        pass  # fallback to raw if conversion fails
+                elif data_type == 'text':
+                    client_value = str(client_value)
+                # Add to context and return
+                context.add_value(variable, client_value, 'client_static')
+                return client_value
+        except Exception as e:
+            print(f"Error fetching client_static value for {variable}: {e}")
+        # No value found in Client_Variables, proceed to fallbacks
+    
+    # First check if we already have the value (only for non-client_static variables)
     existing_value = context.get_value(variable)
     if existing_value is not None:
         return existing_value
-    
+
     # Always define max_periods before using in fallbacks
     max_periods = var_config.get('previous_period_max', 0)
     # Ensure it's an int
@@ -321,7 +354,20 @@ def resolve_value(
             global_vars,
             max_periods
         )
-        if value is not None:
+        if source == "calculation_needed":
+            # Try to calculate using formula
+            formula = var_config.get('formula', '')
+            if formula:
+                # Get all available values for formula evaluation
+                all_values = context.get_all_values()
+                # Build variable_types dict for this formula
+                variable_types = {k: var_config.get('fields', {}).get('Data_Type', 'number') for k in re.findall(r'\{([^}]+)\}', formula)}
+                result, error, expr, var_values = evaluate_formula(formula, all_values, variable, variable_types, context.calculated_values)
+                if not error and result is not None:
+                    context.add_value(variable, result, "calculated_fallback")
+                    return result
+            # If calculation failed, continue to next fallback
+        elif value is not None:
             # Apply data type conversion if needed
             data_type = var_config.get('fields', {}).get('Data_Type', 'number')
             if data_type == 'percentage':
@@ -344,7 +390,20 @@ def resolve_value(
             global_vars,
             max_periods
         )
-        if value is not None:
+        if source == "calculation_needed":
+            # Try to calculate using formula
+            formula = var_config.get('formula', '')
+            if formula:
+                # Get all available values for formula evaluation
+                all_values = context.get_all_values()
+                # Build variable_types dict for this formula
+                variable_types = {k: var_config.get('fields', {}).get('Data_Type', 'number') for k in re.findall(r'\{([^}]+)\}', formula)}
+                result, error, expr, var_values = evaluate_formula(formula, all_values, variable, variable_types, context.calculated_values)
+                if not error and result is not None:
+                    context.add_value(variable, result, "calculated_fallback")
+                    return result
+            # If calculation failed, continue
+        elif value is not None:
             # Apply data type conversion if needed
             data_type = var_config.get('fields', {}).get('Data_Type', 'number')
             if data_type == 'percentage':
@@ -356,7 +415,6 @@ def resolve_value(
                     # If conversion fails, use original value
                     pass
             context.add_value(variable, value, source)
-            return value
             return value
     
     # No value found
@@ -593,8 +651,7 @@ def calculate_all_variables(
         if var in report_variables:
             value = resolve_value(var, context, report_variables[var], global_vars)
             if value is not None:
-                # Add the resolved value to context so it's available for writing to table
-                context.add_value(var, value, "level_0_resolved")
+                # Don't override the source - resolve_value already added it to context with correct source
                 print(f"  ✓ Resolved {var}: {value}")
             else:
                 # Check if this is a critical variable
@@ -616,12 +673,19 @@ def calculate_all_variables(
                 continue
             
             var_config = report_variables[var]
+            source_type = var_config['fields'].get('Source_Type', '').lower()
             formula = var_config.get('formula', '')
-            
-            if not formula:
+
+            # Only require a formula if Source_Type is not 'client_historical'
+            if source_type != 'client_historical' and not formula:
                 context.errors.append(f"No formula for calculated variable '{var}'")
                 continue
-            
+
+            # If Source_Type is 'client_historical', skip formula and let special logic handle it
+            if source_type == 'client_historical':
+                # YTD or historical logic handled elsewhere (after level 3, etc.)
+                continue
+
             # Get all available values for formula evaluation
             all_values = context.get_all_values()
             
@@ -877,7 +941,7 @@ def write_to_generated_reports(
                                         parts = expected_values.split('AND')
                                         min_val = float(parts[0].split('>=')[1].strip())
                                         max_val = float(parts[1].split('<=')[1].strip())
-                                        range_size = max_val - min_val
+                                        range_size = max_val - min_val;
                                         
                                         if result < min_val:
                                             distance = min_val - result
@@ -948,13 +1012,13 @@ def write_to_generated_reports(
                                     parts = expected_values.split('AND')
                                     min_val = float(parts[0].split('>=')[1].strip())
                                     max_val = float(parts[1].split('<=')[1].strip())
-                                    range_size = max_val - min_val
+                                    range_size = max_val - min_val;
                                     
                                     distance = 0
                                     if value < min_val:
                                         distance = min_val - value
                                     elif value > max_val:
-                                        distance = value - max_val
+                                        distance = value - max_val;
                                     
                                     if distance > range_size:
                                         expected_far_outside += 1
