@@ -265,13 +265,8 @@ class ReportGenerator:
                             month_name = month_names[month_num]
                             # If value is "missing", leave as empty string
                             if value != "missing":
-                                # Format the value as integer if it's a number
-                                if isinstance(value, (int, float)):
-                                    mapping[f'hhs_{month_name}'] = str(int(value))
-                                else:
-                                    mapping[f'hhs_{month_name}'] = str(value)
-                            # If "missing", it stays as empty string (already set above)
-                            
+                                # Use the same formatting logic as {hhs}
+                                mapping[f'hhs_{month_name}'] = self.format_value(value, 'hhs')
             except (json.JSONDecodeError, KeyError, TypeError) as e:
                 print(f"Warning: Could not parse YTD metadata: {e}")
         
