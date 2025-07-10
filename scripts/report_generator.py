@@ -437,36 +437,49 @@ class ReportGenerator:
                 check=True
             )
             
-            # Configure git user for this repository
-            subprocess.run(
-                ["git", "config", "user.email", "reporting@agentinsider.ai"],
+            # Check if there are any changes to commit
+            result = subprocess.run(
+                ["git", "status", "--porcelain"],
                 cwd=self.github_pages_dir,
-                check=True
-            )
-            subprocess.run(
-                ["git", "config", "user.name", "Agent Insider Reporting"],
-                cwd=self.github_pages_dir,
-                check=True
+                capture_output=True,
+                text=True
             )
             
-            commit_message = f"Update report {filename} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-            subprocess.run(
-                ["git", "commit", "-m", commit_message],
-                cwd=self.github_pages_dir,
-                check=True
-            )
+            if result.stdout.strip():
+                # There are changes, proceed with commit
+                # Configure git user for this repository
+                subprocess.run(
+                    ["git", "config", "user.email", "reporting@agentinsider.ai"],
+                    cwd=self.github_pages_dir,
+                    check=True
+                )
+                subprocess.run(
+                    ["git", "config", "user.name", "Agent Insider Reporting"],
+                    cwd=self.github_pages_dir,
+                    check=True
+                )
+                
+                commit_message = f"Update report {filename} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                subprocess.run(
+                    ["git", "commit", "-m", commit_message],
+                    cwd=self.github_pages_dir,
+                    check=True
+                )
+                
+                subprocess.run(
+                    ["git", "push", "origin", GITHUB_PAGES_BRANCH],
+                    cwd=self.github_pages_dir,
+                    check=True
+                )
+                print(f"✓ Changes committed and pushed to GitHub")
+            else:
+                print(f"✓ No changes detected, file already up to date on GitHub")
             
-            subprocess.run(
-                ["git", "push", "origin", GITHUB_PAGES_BRANCH],
-                cwd=self.github_pages_dir,
-                check=True
-            )
-            
-            # Generate URL
+            # Generate URL (always return URL whether we committed or not)
             repo_name = GITHUB_REPO.split('/')[-1]
             github_url = f"https://{GITHUB_REPO.split('/')[0]}.github.io/{repo_name}/{filename}"
             
-            print(f"✓ Report deployed to GitHub Pages: {github_url}")
+            print(f"✓ Report available at GitHub Pages: {github_url}")
             return github_url
             
         except subprocess.CalledProcessError as e:
@@ -629,11 +642,9 @@ class ReportGenerator:
             try:
                 table = self.base.table(GENERATED_REPORTS_TABLE)
                 table.update(report_id, {
-                    'github_url': github_url,
-                    'report_generated': True,
-                    'report_generation_date': datetime.now().isoformat()
+                    'Report URL': github_url
                 })
-                print(f"✓ Updated Airtable record with GitHub URL")
+                print(f"✓ Updated Airtable record with Report URL: {github_url}")
             except Exception as e:
                 print(f"✗ Error updating Airtable record: {e}")
         
