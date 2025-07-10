@@ -48,6 +48,81 @@ def extract_lookup_value(field):
     return field
 
 
+class ConversionTracker:
+    """
+    Track which values have been converted to prevent double conversion
+    """
+    def __init__(self):
+        self.converted_variables = set()
+        self.conversion_log = []
+    
+    def is_converted(self, variable_name):
+        """Check if variable has already been converted"""
+        return variable_name in self.converted_variables
+    
+    def mark_converted(self, variable_name, stage, original_value, converted_value):
+        """Mark variable as converted and log the conversion"""
+        self.converted_variables.add(variable_name)
+        log_entry = {
+            'variable': variable_name,
+            'stage': stage,
+            'original': original_value,
+            'converted': converted_value,
+            'timestamp': datetime.now().isoformat()
+        }
+        self.conversion_log.append(log_entry)
+        print(f"CONVERSION: {variable_name} at {stage}: {original_value} → {converted_value}")
+    
+    def reset_for_new_calculation(self):
+        """Reset tracker for new calculation context"""
+        self.converted_variables.clear()
+        self.conversion_log.clear()
+
+
+def safe_percentage_conversion(value, variable_name, current_stage, tracker):
+    """
+    Convert percentage to decimal ONLY if not already converted
+    Returns: (converted_value, was_converted_bool)
+    """
+    if value is None:
+        return None, False
+    
+    # Check if already converted
+    if tracker.is_converted(variable_name):
+        print(f"SKIP: {variable_name} at {current_stage} - already converted")
+        return float(value), False
+    
+    original_value = value
+    
+    # Handle string percentages (e.g., "25%")
+    if isinstance(value, str) and value.strip().endswith('%'):
+        converted_value = float(value.strip()[:-1]) / 100
+        tracker.mark_converted(variable_name, current_stage, original_value, converted_value)
+        return converted_value, True
+    
+    # Handle numeric values that need conversion
+    try:
+        numeric_value = float(value)
+        # Fixed logic: Convert if value appears to be in percentage format
+        # Values between 0 and 1 are assumed to already be in decimal format
+        # Values >= 1 are assumed to be in percentage format (1% = 1, 150% = 150)
+        if numeric_value >= 1:
+            converted_value = numeric_value / 100
+            tracker.mark_converted(variable_name, current_stage, original_value, converted_value)
+            return converted_value, True
+        else:
+            # Value is already in decimal format (0.25 for 25%)
+            # BUT: check if it's exactly 1.0 (could be 100%)
+            if numeric_value == 1.0:
+                # Need context to decide - for now, assume it's already converted
+                print(f"AMBIGUOUS: {variable_name} at {current_stage}: value=1.0 (could be 100% or already converted)")
+            print(f"ALREADY_DECIMAL: {variable_name} at {current_stage}: {value}")
+            return numeric_value, False
+    except (ValueError, TypeError):
+        print(f"CONVERSION_ERROR: {variable_name} at {current_stage}: {value}")
+        return value, False
+
+
 def parse_numeric_value(value):
     """
     Parse a value to numeric, handling currency formats with commas and dollar signs
@@ -102,6 +177,7 @@ class CalculationContext:
         self.ytd_metadata = {}
         self.validation_flags = []
         self.expected_flags = []
+        self.conversion_tracker = ConversionTracker()  # Add conversion tracker
         
         # Extract client_record_id for YTD queries
         client_record_id = report_record['fields'].get('client_record_id')
@@ -382,7 +458,9 @@ def resolve_value(
                 if data_type in ('number', 'currency', 'percentage'):
                     try:
                         if data_type == 'percentage':
-                            client_value = float(client_value) / 100
+                            client_value, _ = safe_percentage_conversion(
+                                client_value, variable, 'resolve_value', context.conversion_tracker
+                            )
                         else:
                             client_value = float(client_value)
                     except Exception:
@@ -426,7 +504,7 @@ def resolve_value(
                 all_values = context.get_all_values()
                 # Build variable_types dict for this formula
                 variable_types = {k: var_config.get('fields', {}).get('Data_Type', 'number') for k in re.findall(r'\{([^}]+)\}', formula)}
-                result, error, expr, var_values = evaluate_formula(formula, all_values, variable, variable_types, context.calculated_values)
+                result, error, expr, var_values = evaluate_formula(formula, all_values, variable, variable_types, context.calculated_values, context)
                 if not error and result is not None:
                     context.add_value(variable, result, "calculated_fallback")
                     return result
@@ -436,12 +514,11 @@ def resolve_value(
             data_type = var_config.get('fields', {}).get('Data_Type', 'number')
             if data_type == 'percentage':
                 try:
-                    # Convert percentage to decimal (e.g., 90.0 -> 0.90, "90" -> 0.90)
-                    numeric_value = float(value)
-                    value = numeric_value / 100
+                    value, _ = safe_percentage_conversion(
+                        value, variable, 'apply_fallback', context.conversion_tracker
+                    )
                 except (ValueError, TypeError):
-                    # If conversion fails, use original value
-                    pass
+                    pass  # If conversion fails, use original value
             context.add_value(variable, value, source)
             return value
     
@@ -462,7 +539,7 @@ def resolve_value(
                 all_values = context.get_all_values()
                 # Build variable_types dict for this formula
                 variable_types = {k: var_config.get('fields', {}).get('Data_Type', 'number') for k in re.findall(r'\{([^}]+)\}', formula)}
-                result, error, expr, var_values = evaluate_formula(formula, all_values, variable, variable_types, context.calculated_values)
+                result, error, expr, var_values = evaluate_formula(formula, all_values, variable, variable_types, context.calculated_values, context)
                 if not error and result is not None:
                     context.add_value(variable, result, "calculated_fallback")
                     return result
@@ -472,12 +549,11 @@ def resolve_value(
             data_type = var_config.get('fields', {}).get('Data_Type', 'number')
             if data_type == 'percentage':
                 try:
-                    # Convert percentage to decimal (e.g., 90.0 -> 0.90, "90" -> 0.90)
-                    numeric_value = float(value)
-                    value = numeric_value / 100
+                    value, _ = safe_percentage_conversion(
+                        value, variable, 'apply_fallback', context.conversion_tracker
+                    )
                 except (ValueError, TypeError):
-                    # If conversion fails, use original value
-                    pass
+                    pass  # If conversion fails, use original value
             context.add_value(variable, value, source)
             return value
     
@@ -490,7 +566,8 @@ def evaluate_formula(
     values: Dict[str, Any],
     variable_name: Optional[str] = None,
     variable_types: Optional[Dict[str, str]] = None,
-    calculated_values: Optional[Dict[str, Any]] = None
+    calculated_values: Optional[Dict[str, Any]] = None,
+    context: Optional[CalculationContext] = None  # Add context parameter
 ) -> Tuple[Optional[float], Optional[str], Optional[str], Optional[List[str]]]:
     """
     Safely evaluate a formula like '{hhs} x {autos_per_hh}',
@@ -509,33 +586,21 @@ def evaluate_formula(
             if isinstance(value, list):
                 value = value[0] if value else None
             if variable_types and variable_types.get(var_match) == 'percentage':
-                try:
-                    if isinstance(value, str):
-                        # Handle string percentages like "12%" - convert to decimal
-                        value_clean = value.replace('%', '').replace(',', '').strip()
-                        value = float(value_clean) / 100 if value_clean else None
-                    elif value is not None:
-                        # Check if this variable has already been calculated (is in calculated_values)
-                        # If so, it's already in decimal form and shouldn't be converted again
-                        if calculated_values and var_match in calculated_values:
-                            # Already calculated value, use as-is (already in decimal form)
-                            value = float(value)
-                        else:
-                            # Check if this is a lookup field - these come from Airtable already in decimal form
-                            lookup_fields = [
-                                'quote_starts', 'sms_clicks', 'phone_clicks', 'total_leads', 'conversions', 'cost',
-                                'search_impression_share', 'search_lost_IS_budget'
-                            ]
-                            if var_match in lookup_fields:
-                                # Lookup field percentage values are already in decimal form
-                                value = float(value)
-                            else:
-                                # Raw percentage value from Airtable, convert to decimal
-                                value = float(value) / 100
-                    else:
-                        return None, f"Non-numeric percentage value for {var_match}: {value}", None, None
-                except Exception:
-                    return None, f"Non-numeric percentage value for {var_match}: {value}", None, None
+                if context and hasattr(context, 'conversion_tracker'):
+                    value, _ = safe_percentage_conversion(
+                        value, var_match, 'evaluate_formula', context.conversion_tracker
+                    )
+                else:
+                    # Fallback to original logic if no context
+                    print(f"WARNING: No conversion tracker available for {var_match}")
+                    try:
+                        if isinstance(value, str):
+                            value_clean = value.replace('%', '').replace(',', '').strip()
+                            value = float(value_clean) / 100 if value_clean else None
+                        elif value is not None:
+                            value = float(value) / 100
+                    except (ValueError, TypeError):
+                        pass
             if isinstance(value, str):
                 value_clean = value.replace(',', '').strip()
                 try:
@@ -855,6 +920,9 @@ def calculate_all_variables(
 ) -> bool:
     """Main calculation engine"""
     
+    # CRITICAL: Reset tracker at start of new calculation
+    context.conversion_tracker.reset_for_new_calculation()
+    
     print("\n" + "="*70)
     print("STARTING CALCULATION ENGINE")
     print("="*70)
@@ -911,7 +979,7 @@ def calculate_all_variables(
             # Build variable_types dict for this formula
             variable_types = {k: report_variables[k]['fields'].get('Data_Type', 'number') for k in re.findall(r'\{([^}]+)\}', formula) if k in report_variables}
             # Evaluate the formula with type info
-            result, error, expr, var_values = evaluate_formula(formula, all_values, var, variable_types, context.calculated_values)
+            result, error, expr, var_values = evaluate_formula(formula, all_values, var, variable_types, context.calculated_values, context)
             if error:
                 context.errors.append(f"Error calculating {var}: {error}")
                 # Try fallbacks for calculated variables
@@ -1034,16 +1102,16 @@ def write_to_generated_reports(
                 elif data_type == 'percentage':
                     original = value
                     try:
-                        val = parse_numeric_value(value)
-                        if val > 1:
-                            converted = val / 100
-                        else:
-                            converted = val
-                        print(f"  {var_name}: {original} → {converted} (percentage)")
+                        # Use safe conversion to prevent double conversion
+                        converted, was_converted = safe_percentage_conversion(
+                            value, var_name, 'write_to_generated_reports', context.conversion_tracker
+                        )
                         report_fields[var_name] = converted
+                        if not was_converted:
+                            print(f"DEBUG: {var_name} already in correct format: {value}")
                     except Exception as e:
-                        print(f"  {var_name}: {original} → ERROR (percentage conversion failed): {e}")
-                        report_fields[var_name] = None
+                        print(f"DEBUG: Error converting {var_name}: {e}")
+                        report_fields[var_name] = value
                 elif data_type == 'text':
                     report_fields[var_name] = str(value)
                     print(f"  {var_name}: {value} → {str(value)} (text)")
