@@ -437,6 +437,18 @@ class ReportGenerator:
                 check=True
             )
             
+            # Configure git user for this repository
+            subprocess.run(
+                ["git", "config", "user.email", "reporting@agentinsider.ai"],
+                cwd=self.github_pages_dir,
+                check=True
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Agent Insider Reporting"],
+                cwd=self.github_pages_dir,
+                check=True
+            )
+            
             commit_message = f"Update report {filename} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             subprocess.run(
                 ["git", "commit", "-m", commit_message],
