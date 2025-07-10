@@ -60,9 +60,9 @@ def health_check():
         "service": "report-generator-webhook"
     })
 
-@app.route('/webhook/generate-report', methods=['POST'])
-def generate_report_webhook():
-    """Main webhook endpoint for report generation"""
+@app.route('/webhook/calculation-and-report', methods=['POST'])
+def calculation_and_report_webhook():
+    """Execute full calculation and report generation"""
     try:
         # Verify webhook secret
         secret = request.headers.get('X-Webhook-Secret')
@@ -79,49 +79,7 @@ def generate_report_webhook():
         if not report_id:
             return jsonify({"error": "report_id is required"}), 400
         
-        # Start background processing
-        def background_process():
-            result = processor.process_report(report_id)
-            # In a production environment, you might want to send the result
-            # back to n8n via a callback URL or store it in a database
-            print(f"Background processing completed: {result}")
-        
-        thread = threading.Thread(target=background_process)
-        thread.start()
-        
-        return jsonify({
-            "success": True,
-            "message": "Report generation started",
-            "report_id": report_id,
-            "timestamp": datetime.now().isoformat()
-        })
-        
-    except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }), 500
-
-@app.route('/webhook/generate-report-sync', methods=['POST'])
-def generate_report_sync_webhook():
-    """Synchronous webhook endpoint for report generation"""
-    try:
-        # Verify webhook secret
-        secret = request.headers.get('X-Webhook-Secret')
-        if secret != WEBHOOK_SECRET:
-            return jsonify({"error": "Invalid webhook secret"}), 401
-        
-        # Get request data
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        # Extract report ID
-        report_id = data.get('report_id')
-        if not report_id:
-            return jsonify({"error": "report_id is required"}), 400
-        
-        # Process report synchronously
+        # Process report synchronously (calculation + report generation)
         result = processor.process_report(report_id)
         
         return jsonify({
@@ -131,6 +89,56 @@ def generate_report_sync_webhook():
             "error": result.get("error"),
             "timestamp": datetime.now().isoformat()
         })
+        
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route('/webhook/report-only', methods=['POST'])
+def report_only_webhook():
+    """Generate and deploy report only (assumes calculation is done)"""
+    try:
+        # Verify webhook secret
+        secret = request.headers.get('X-Webhook-Secret')
+        if secret != WEBHOOK_SECRET:
+            return jsonify({"error": "Invalid webhook secret"}), 401
+        
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        # Extract report ID
+        report_id = data.get('report_id')
+        if not report_id:
+            return jsonify({"error": "report_id is required"}), 400
+        
+        # Generate and deploy report only
+        try:
+            url = processor.generator.generate_and_deploy(report_id)
+            if url:
+                return jsonify({
+                    "success": True,
+                    "url": url,
+                    "report_id": report_id,
+                    "timestamp": datetime.now().isoformat()
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Report generation and deployment failed",
+                    "report_id": report_id,
+                    "timestamp": datetime.now().isoformat()
+                }), 500
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": str(e),
+                "report_id": report_id,
+                "timestamp": datetime.now().isoformat()
+            }), 500
         
     except Exception as e:
         return jsonify({
@@ -180,56 +188,6 @@ def calculation_only_webhook():
             "timestamp": datetime.now().isoformat()
         }), 500
 
-@app.route('/webhook/deploy-only', methods=['POST'])
-def deploy_only_webhook():
-    """Webhook endpoint for deploying report only (assumes calculation is done)"""
-    try:
-        # Verify webhook secret
-        secret = request.headers.get('X-Webhook-Secret')
-        if secret != WEBHOOK_SECRET:
-            return jsonify({"error": "Invalid webhook secret"}), 401
-        
-        # Get request data
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        # Extract report ID
-        report_id = data.get('report_id')
-        if not report_id:
-            return jsonify({"error": "report_id is required"}), 400
-        
-        # Deploy report only
-        try:
-            url = processor.generator.generate_and_deploy(report_id)
-            if url:
-                return jsonify({
-                    "success": True,
-                    "url": url,
-                    "report_id": report_id,
-                    "timestamp": datetime.now().isoformat()
-                })
-            else:
-                return jsonify({
-                    "success": False,
-                    "error": "Report deployment failed",
-                    "report_id": report_id,
-                    "timestamp": datetime.now().isoformat()
-                }), 500
-        except Exception as e:
-            return jsonify({
-                "success": False,
-                "error": str(e),
-                "report_id": report_id,
-                "timestamp": datetime.now().isoformat()
-            }), 500
-        
-    except Exception as e:
-        return jsonify({
-            "error": str(e),
-            "timestamp": datetime.now().isoformat()
-        }), 500
-
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
@@ -237,9 +195,8 @@ if __name__ == '__main__':
     print(f"Starting webhook server on port {port}")
     print(f"Available endpoints:")
     print(f"  GET  /health - Health check")
-    print(f"  POST /webhook/generate-report - Generate report (async)")
-    print(f"  POST /webhook/generate-report-sync - Generate report (sync)")
+    print(f"  POST /webhook/calculation-and-report - Execute full calculation and report generation")
     print(f"  POST /webhook/calculation-only - Run calculation engine only")
-    print(f"  POST /webhook/deploy-only - Deploy report only")
+    print(f"  POST /webhook/report-only - Generate and deploy report only")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
