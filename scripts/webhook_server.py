@@ -8,7 +8,13 @@ report generation and deployment.
 from flask import Flask, request, jsonify
 import json
 import os
+import sys
 from datetime import datetime
+from pathlib import Path
+
+# Add the scripts directory to the path for imports
+sys.path.append(str(Path(__file__).parent))
+
 from report_generator import ReportGenerator
 from calculation_engine import main as run_calculation_engine
 import threading

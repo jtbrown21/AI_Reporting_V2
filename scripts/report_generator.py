@@ -20,6 +20,7 @@ from pathlib import Path
 import re
 from pyairtable import Api
 from dotenv import load_dotenv
+import github
 
 # Load environment variables
 load_dotenv()
@@ -49,6 +50,14 @@ class ReportGenerator:
         self.template_path = Path(__file__).parent.parent / "templates" / "v2.html"
         self.output_dir = Path(__file__).parent.parent / "reports"
         self.github_pages_dir = Path(__file__).parent.parent / "gh-pages"
+        
+        # Initialize GitHub client for API-based deployment
+        self.github_token = GITHUB_TOKEN
+        self.github_repo = GITHUB_REPO
+        if self.github_token:
+            self.github_client = github.Github(self.github_token)
+        else:
+            self.github_client = None
         
         # Set development directory for test mode
         self.development_dir = Path(__file__).parent.parent / "templates" / "development"
@@ -374,117 +383,91 @@ class ReportGenerator:
         return str(file_path)
     
     def setup_github_pages(self):
-        """Setup GitHub Pages repository"""
-        if not GITHUB_TOKEN or not GITHUB_REPO:
-            print("✗ GitHub token or repo not configured")
+        """Setup GitHub Pages repository - No setup needed for GitHub API approach"""
+        if not self.github_client or not self.github_repo:
+            print("✗ GitHub client or repo not configured")
             return False
         
-        # Clone or update GitHub Pages repository
-        repo_url = f"https://{GITHUB_TOKEN}@github.com/{GITHUB_REPO}.git"
-        
-        if self.github_pages_dir.exists():
-            # Pull latest changes
-            try:
-                subprocess.run(
-                    ["git", "pull", "origin", GITHUB_PAGES_BRANCH],
-                    cwd=self.github_pages_dir,
-                    check=True,
-                    capture_output=True
-                )
-                print("✓ Updated GitHub Pages repository")
-            except subprocess.CalledProcessError as e:
-                print(f"✗ Error updating repository: {e}")
-                return False
-        else:
-            # Clone repository
-            try:
-                subprocess.run(
-                    ["git", "clone", "-b", GITHUB_PAGES_BRANCH, repo_url, str(self.github_pages_dir)],
-                    check=True,
-                    capture_output=True
-                )
-                print("✓ Cloned GitHub Pages repository")
-            except subprocess.CalledProcessError as e:
-                print(f"✗ Error cloning repository: {e}")
-                return False
-        
+        print("✓ GitHub API client configured")
         return True
     
-    def deploy_to_github_pages(self, html_content: str, filename: str) -> Optional[str]:
-        """Deploy report to GitHub Pages"""
-        if not self.setup_github_pages():
-            return None
-        
-        if not GITHUB_REPO:
-            print("✗ GitHub repo not configured")
-            return None
-        
-        # Save file to GitHub Pages directory
-        file_path = self.github_pages_dir / filename
-        with open(file_path, 'w') as f:
-            f.write(html_content)
-        
-        # Also create/update index.html with latest report
-        index_path = self.github_pages_dir / "index.html"
-        with open(index_path, 'w') as f:
-            f.write(html_content)
-        
-        # Commit and push
+    def publish_report_to_github(self, report_content: str, file_path: str, commit_message: str) -> bool:
+        """
+        Publish the generated report directly to GitHub repository via API
+        """
+        if not self.github_client or not self.github_repo:
+            print("✗ GitHub client or repo not configured")
+            return False
+            
         try:
-            subprocess.run(
-                ["git", "add", "."],
-                cwd=self.github_pages_dir,
-                check=True
-            )
+            # Get the repository
+            repo = self.github_client.get_repo(self.github_repo)
             
-            # Check if there are any changes to commit
-            result = subprocess.run(
-                ["git", "status", "--porcelain"],
-                cwd=self.github_pages_dir,
-                capture_output=True,
-                text=True
-            )
-            
-            if result.stdout.strip():
-                # There are changes, proceed with commit
-                # Configure git user for this repository
-                subprocess.run(
-                    ["git", "config", "user.email", "reporting@agentinsider.ai"],
-                    cwd=self.github_pages_dir,
-                    check=True
+            # Check if file already exists
+            try:
+                existing_file = repo.get_contents(file_path)
+                # Handle the case where get_contents returns a list
+                if isinstance(existing_file, list):
+                    existing_file = existing_file[0]
+                # Update existing file
+                repo.update_file(
+                    path=file_path,
+                    message=commit_message,
+                    content=report_content,
+                    sha=existing_file.sha
                 )
-                subprocess.run(
-                    ["git", "config", "user.name", "Agent Insider Reporting"],
-                    cwd=self.github_pages_dir,
-                    check=True
+                print(f"✓ Updated existing report at {file_path}")
+            except github.GithubException:
+                # Create new file if it doesn't exist
+                repo.create_file(
+                    path=file_path,
+                    message=commit_message,
+                    content=report_content
                 )
-                
-                commit_message = f"Update report {filename} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                subprocess.run(
-                    ["git", "commit", "-m", commit_message],
-                    cwd=self.github_pages_dir,
-                    check=True
-                )
-                
-                subprocess.run(
-                    ["git", "push", "origin", GITHUB_PAGES_BRANCH],
-                    cwd=self.github_pages_dir,
-                    check=True
-                )
-                print(f"✓ Changes committed and pushed to GitHub")
-            else:
-                print(f"✓ No changes detected, file already up to date on GitHub")
+                print(f"✓ Created new report at {file_path}")
             
-            # Generate URL (always return URL whether we committed or not)
-            repo_name = GITHUB_REPO.split('/')[-1]
-            github_url = f"https://{GITHUB_REPO.split('/')[0]}.github.io/{repo_name}/{filename}"
+            return True
             
-            print(f"✓ Report available at GitHub Pages: {github_url}")
-            return github_url
-            
-        except subprocess.CalledProcessError as e:
-            print(f"✗ Error deploying to GitHub Pages: {e}")
+        except Exception as e:
+            print(f"✗ Error publishing report: {str(e)}")
+            return False
+
+    def deploy_to_github_via_api(self, html_content: str, filename: str) -> Optional[str]:
+        """Deploy report to GitHub via API (replaces git operations)"""
+        if not self.github_client or not self.github_repo:
+            print("✗ GitHub client or repo not configured")
             return None
+            
+        try:
+            # Create GitHub path for the report
+            github_path = f"reports/{filename}"
+            
+            # Create commit message
+            commit_message = f"Update report: {filename} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            
+            # Publish via GitHub API
+            if self.publish_report_to_github(html_content, github_path, commit_message):
+                # Also update index.html with latest report
+                index_commit_message = f"Update index.html with latest report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                self.publish_report_to_github(html_content, "index.html", index_commit_message)
+                
+                # Generate URL
+                repo_name = self.github_repo.split('/')[-1]
+                github_url = f"https://{self.github_repo.split('/')[0]}.github.io/{repo_name}/{filename}"
+                
+                print(f"✓ Report available at GitHub Pages: {github_url}")
+                return github_url
+            else:
+                print(f"✗ Failed to deploy {filename}")
+                return None
+                
+        except Exception as e:
+            print(f"✗ Error during GitHub API deployment: {str(e)}")
+            return None
+
+    def deploy_to_github_pages(self, html_content: str, filename: str) -> Optional[str]:
+        """Deploy report to GitHub Pages via API (replaces git operations)"""
+        return self.deploy_to_github_via_api(html_content, filename)
     
     def validate_data_mapping(self, report_data: Dict[str, Any]) -> Dict[str, Any]:
         """Validate data mapping and return validation results"""
