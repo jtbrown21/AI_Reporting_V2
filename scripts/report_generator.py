@@ -453,7 +453,7 @@ class ReportGenerator:
                 
                 # Generate URL
                 repo_name = self.github_repo.split('/')[-1]
-                github_url = f"https://{self.github_repo.split('/')[0]}.github.io/{repo_name}/{filename}"
+                github_url = f"https://{self.github_repo.split('/')[0]}.github.io/{repo_name}/reports/{filename}"
                 
                 print(f"✓ Report available at GitHub Pages: {github_url}")
                 return github_url
