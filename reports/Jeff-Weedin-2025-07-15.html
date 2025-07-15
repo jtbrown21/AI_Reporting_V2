@@ -32,23 +32,22 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 40px;
+            height: 100px;        /* Fixed height to contain large logo */
+            overflow: hidden;     /* Prevents overflow */
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 15px;
+            height: 100%;         /* Takes full header height */
         }
 
         .logo-icon {
-            width: 100px;
-            height: 100px;
-        }
-
-        .logo-text {
-            font-size: 20px;
-            font-weight: bold;
-            font-style: italic;
+            max-height: 100%;     /* Constrained to header height */
+            width: auto;
+            display: block;
+            object-fit: contain;
         }
 
         .date {
