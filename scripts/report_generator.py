@@ -38,6 +38,12 @@ GENERATED_REPORTS_TABLE = 'Generated_Reports'
 class ReportGenerator:
     """Main class for generating and deploying HTML reports"""
     
+    # Month number to name mapping
+    MONTH_NAMES = {
+        '1': 'jan', '2': 'feb', '3': 'mar', '4': 'apr', '5': 'may', '6': 'jun',
+        '7': 'jul', '8': 'aug', '9': 'sep', '10': 'oct', '11': 'nov', '12': 'dec'
+    }
+    
     def __init__(self, test_mode: bool = False):
         self.test_mode = test_mode
         
@@ -216,7 +222,7 @@ class ReportGenerator:
                     formatted_value = self.format_value(value, field_name)
                 mapping[field_name] = formatted_value
         
-        # Special handling for date formatting
+        # Special handling for date formatting - use date_end for report month
         if 'date_end' in report_data:
             date_end = report_data['date_end']
             # Handle if date_end is a list
@@ -228,8 +234,13 @@ class ReportGenerator:
                 try:
                     dt = datetime.fromisoformat(date_end_value)
                     mapping['month'] = dt.strftime("%B %Y").upper()
-                except Exception:
-                    pass  # Do not set 'month' if parsing fails
+                except Exception as e:
+                    print(f"Warning: Could not parse date_end {date_end_value}: {e}")
+                    # Fallback to current month only if no date_end
+                    mapping['month'] = datetime.now().strftime("%B %Y").upper()
+        else:
+            # Only use current date if no date_end provided
+            mapping['month'] = datetime.now().strftime("%B %Y").upper()
         
         # Handle monthly HHS data from YTD metadata
         self._process_monthly_hhs_data(report_data, mapping)
@@ -244,16 +255,9 @@ class ReportGenerator:
     
     def _process_monthly_hhs_data(self, report_data: Dict[str, Any], mapping: Dict[str, str]):
         """Process monthly HHS data from YTD metadata"""
-        import json
-        
-        # Month number to name mapping
-        month_names = {
-            '1': 'jan', '2': 'feb', '3': 'mar', '4': 'apr', '5': 'may', '6': 'jun',
-            '7': 'jul', '8': 'aug', '9': 'sep', '10': 'oct', '11': 'nov', '12': 'dec'
-        }
         
         # Initialize all months as empty by default (for bar chart)
-        for month_num, month_name in month_names.items():
+        for month_num, month_name in self.MONTH_NAMES.items():
             mapping[f'hhs_{month_name}'] = ''
         
         # Process YTD metadata if available
@@ -270,8 +274,8 @@ class ReportGenerator:
                     months_data = ytd_metadata['months']
                     
                     for month_num, value in months_data.items():
-                        if month_num in month_names:
-                            month_name = month_names[month_num]
+                        if month_num in self.MONTH_NAMES:
+                            month_name = self.MONTH_NAMES[month_num]
                             # If value is "missing", leave as empty string
                             if value != "missing":
                                 # Use the same formatting logic as {hhs}
@@ -279,34 +283,44 @@ class ReportGenerator:
             except (json.JSONDecodeError, KeyError, TypeError) as e:
                 print(f"Warning: Could not parse YTD metadata: {e}")
         
-        # Handle current month - should show current month's HHS value
+        # Handle report month - use the hhs value for the month this report represents
+        report_month_name = None
         if 'date_end' in report_data:
             try:
                 date_end = report_data['date_end']
+                if isinstance(date_end, list) and date_end:
+                    date_end = date_end[0]
                 if isinstance(date_end, str):
                     dt = datetime.fromisoformat(date_end)
-                    current_month_num = str(dt.month)
+                    report_month_num = str(dt.month)
                     
-                    if current_month_num in month_names:
-                        current_month_name = month_names[current_month_num]
+                    if report_month_num in self.MONTH_NAMES:
+                        report_month_name = self.MONTH_NAMES[report_month_num]
                         
-                        # Use current month's HHS value
+                        # Use the hhs value for this report's month
+                        # This hhs value represents the actual HHS for the report month (e.g., February's HHS)
                         if 'hhs' in report_data and report_data['hhs'] is not None:
                             current_hhs = self.format_value(report_data['hhs'], 'hhs')
-                            mapping[f'hhs_{current_month_name}'] = current_hhs
-                            
+                            mapping[f'hhs_{report_month_name}'] = current_hhs
+                            print(f"Setting {report_month_name} HHS to: {current_hhs}")
+                                
             except (ValueError, AttributeError) as e:
-                print(f"Warning: Could not determine current month: {e}")
+                print(f"Warning: Could not determine report month from date_end: {e}")
+        
+        # Debug output
+        print(f"Report month: {report_month_name}")
+        print(f"Monthly HHS values: {[(k, v) for k, v in mapping.items() if k.startswith('hhs_')]}")
         
         # If no date_end, fall back to current system date
-        if all(mapping[f'hhs_{month_names[str(i)]}'] == '' for i in range(1, 13)):
-            # If all months are still empty, try to set current month based on today's date
+        if not report_month_name:
             current_month_num = str(datetime.now().month)
-            if current_month_num in month_names:
-                current_month_name = month_names[current_month_num]
+            if current_month_num in self.MONTH_NAMES:
+                report_month_name = self.MONTH_NAMES[current_month_num]
+                
+                # Use current month's HHS value
                 if 'hhs' in report_data and report_data['hhs'] is not None:
                     current_hhs = self.format_value(report_data['hhs'], 'hhs')
-                    mapping[f'hhs_{current_month_name}'] = current_hhs
+                    mapping[f'hhs_{report_month_name}'] = current_hhs
     
     def generate_html_report(self, report_data: Dict[str, Any], client_name: str) -> tuple[str, str]:
         """Generate HTML report from template and data"""
