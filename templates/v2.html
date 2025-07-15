@@ -32,25 +32,22 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 40px;
+            height: 100px;        /* Fixed height to contain large logo */
+            overflow: hidden;     /* Prevents overflow */
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 15px;
+            height: 100%;         /* Takes full header height */
         }
 
         .logo-icon {
-            width: 50px;
-            height: 50px;
-            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 10 C30 10, 10 30, 10 50 C10 70, 30 90, 50 90 C70 90, 90 70, 90 50 C90 30, 70 10, 50 10" fill="black"/><circle cx="35" cy="40" r="5" fill="white"/><circle cx="65" cy="40" r="5" fill="white"/><path d="M35 60 Q50 70 65 60" fill="none" stroke="white" stroke-width="3"/></svg>') no-repeat center;
-            background-size: contain;
-        }
-
-        .logo-text {
-            font-size: 20px;
-            font-weight: bold;
-            font-style: italic;
+            max-height: 100%;     /* Constrained to header height */
+            width: auto;
+            display: block;
+            object-fit: contain;
         }
 
         .date {
@@ -382,7 +379,6 @@
         <div class="header">
             <div class="logo">
                 <img src="https://raw.githubusercontent.com/jtbrown21/AI_Reporting_V2/main/reports/assets/agent-insider-logo.png" alt="Logo Icon" class="logo-icon" />
-                <div class="logo-text">AGENT INSIDER</div>
             </div>
             <div class="date">CREATED <span class="swap-target" data-field="month">JUNE 2025</span></div>
         </div>
