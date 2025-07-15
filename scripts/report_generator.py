@@ -370,8 +370,8 @@ class ReportGenerator:
         # Process chart bars to set dynamic heights and values
         html_content = self._process_chart_data(html_content, value_mapping)
         
-        # Generate filename
-        report_date = datetime.now().strftime("%Y-%m-%d")
+        # Generate filename using report year and month from template mapping
+        report_date = self._get_report_date_string(value_mapping)
         safe_client_name = re.sub(r'[^a-zA-Z0-9-]', '', client_name.replace(' ', '-'))
         filename = f"{safe_client_name}-{report_date}.html"
         
@@ -465,11 +465,10 @@ class ReportGenerator:
                 index_commit_message = f"Update index.html with latest report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                 self.publish_report_to_github(html_content, "index.html", index_commit_message)
                 
-                # Generate URL
-                repo_name = self.github_repo.split('/')[-1]
-                github_url = f"https://{self.github_repo.split('/')[0]}.github.io/{repo_name}/reports/{filename}"
+                # Generate URL - check for custom domain via GitHub API
+                github_url = self._get_github_pages_url(filename)
                 
-                print(f"✓ Report available at GitHub Pages: {github_url}")
+                print(f"✓ Report available at: {github_url}")
                 return github_url
             else:
                 print(f"✗ Failed to deploy {filename}")
@@ -848,6 +847,62 @@ class ReportGenerator:
             html_content = html_content[:wrapper_match.start()] + new_wrapper + html_content[wrapper_match.end():]
         
         return html_content
+
+    def _get_github_pages_url(self, filename: str) -> str:
+        """Get the correct GitHub Pages URL (custom domain or default)"""
+        try:
+            # Ensure we have the necessary GitHub configuration
+            if not self.github_client or not self.github_repo:
+                raise Exception("GitHub client or repo not configured")
+            
+            # Get repository
+            repo = self.github_client.get_repo(self.github_repo)
+            
+            # Try to get Pages info via GitHub API
+            # Check if there's a CNAME file which indicates custom domain
+            try:
+                cname_file = repo.get_contents("CNAME")
+                if cname_file:
+                    # Handle both single file and list cases
+                    if isinstance(cname_file, list):
+                        cname_file = cname_file[0]
+                    custom_domain = cname_file.decoded_content.decode('utf-8').strip()
+                    return f"https://{custom_domain}/reports/{filename}"
+            except:
+                # No CNAME file found, use default GitHub Pages URL
+                pass
+            
+            # Use default GitHub Pages URL
+            repo_name = self.github_repo.split('/')[-1]
+            username = self.github_repo.split('/')[0]
+            return f"https://{username}.github.io/{repo_name}/reports/{filename}"
+                
+        except Exception as e:
+            print(f"⚠️  Could not get GitHub Pages info, using default URL: {e}")
+            # Fallback to default URL
+            if self.github_repo:
+                repo_name = self.github_repo.split('/')[-1]
+                username = self.github_repo.split('/')[0]
+                return f"https://{username}.github.io/{repo_name}/reports/{filename}"
+            else:
+                # Final fallback if no repo configured
+                return f"https://example.github.io/reports/{filename}"
+
+    def _get_report_date_string(self, value_mapping: Dict[str, str]) -> str:
+        """Extract year and month from template mapping and format for filename (YYYY-MM format)"""
+        # The month field contains "MONTH YEAR" format (e.g., "JUNE 2025")
+        if 'month' in value_mapping:
+            month_year = value_mapping['month']
+            try:
+                # Parse the "MONTH YEAR" format
+                dt = datetime.strptime(month_year, "%B %Y")
+                return dt.strftime("%Y-%m")
+            except Exception as e:
+                print(f"Warning: Could not parse month value '{month_year}': {e}")
+        
+        # Fallback to current year-month if parsing fails
+        print("Warning: No valid month found in template mapping, using current year-month for filename")
+        return datetime.now().strftime("%Y-%m")
 
 def main(report_id: Optional[str] = None, test_mode: bool = False):
     """Main function for command line usage"""
