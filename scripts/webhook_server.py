@@ -11,6 +11,8 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+import hashlib
+import time
 
 # Add the scripts directory to the path for imports
 sys.path.append(str(Path(__file__).parent))
@@ -18,12 +20,34 @@ sys.path.append(str(Path(__file__).parent))
 from report_generator import ReportGenerator
 from calculation_engine import main as run_calculation_engine
 import threading
-import time
 
 app = Flask(__name__)
 
 # Configuration
 WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET', 'your-secret-key')
+
+# Request deduplication cache
+request_cache = {}
+CACHE_TTL = 300  # 5 minutes
+
+def is_duplicate_request(report_id: str, endpoint: str) -> bool:
+    """Check if this is a duplicate request within the cache TTL"""
+    cache_key = f"{endpoint}:{report_id}"
+    current_time = time.time()
+    
+    # Clean expired entries
+    expired_keys = [key for key, timestamp in request_cache.items() 
+                   if current_time - timestamp > CACHE_TTL]
+    for key in expired_keys:
+        del request_cache[key]
+    
+    # Check if request is duplicate
+    if cache_key in request_cache:
+        return True
+    
+    # Mark request as processed
+    request_cache[cache_key] = current_time
+    return False
 
 class ReportProcessor:
     """Background processor for report generation"""
@@ -85,6 +109,15 @@ def calculation_and_report_webhook():
         if not report_id:
             return jsonify({"error": "report_id is required"}), 400
         
+        # Check for duplicate request
+        if is_duplicate_request(report_id, 'calculation-and-report'):
+            return jsonify({
+                "success": True,
+                "message": "Request already processed (duplicate detected)",
+                "report_id": report_id,
+                "timestamp": datetime.now().isoformat()
+            })
+        
         # Process report synchronously (calculation + report generation)
         result = processor.process_report(report_id)
         
@@ -120,6 +153,15 @@ def report_only_webhook():
         report_id = data.get('report_id')
         if not report_id:
             return jsonify({"error": "report_id is required"}), 400
+        
+        # Check for duplicate request
+        if is_duplicate_request(report_id, 'report-only'):
+            return jsonify({
+                "success": True,
+                "message": "Request already processed (duplicate detected)",
+                "report_id": report_id,
+                "timestamp": datetime.now().isoformat()
+            })
         
         # Generate and deploy report only
         try:
@@ -170,6 +212,15 @@ def calculation_only_webhook():
         report_id = data.get('report_id')
         if not report_id:
             return jsonify({"error": "report_id is required"}), 400
+        
+        # Check for duplicate request
+        if is_duplicate_request(report_id, 'calculation-only'):
+            return jsonify({
+                "success": True,
+                "message": "Request already processed (duplicate detected)",
+                "report_id": report_id,
+                "timestamp": datetime.now().isoformat()
+            })
         
         # Run calculation engine only
         try:

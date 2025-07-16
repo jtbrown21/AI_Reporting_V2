@@ -14,6 +14,7 @@ import os
 import json
 import shutil
 import subprocess
+import time
 from datetime import datetime
 from typing import Dict, Any, Optional
 from pathlib import Path
@@ -417,6 +418,9 @@ class ReportGenerator:
             # Get the repository
             repo = self.github_client.get_repo(self.github_repo)
             
+            # Add small delay to avoid rapid API calls and race conditions
+            time.sleep(1)
+            
             # Check if file already exists
             try:
                 existing_file = repo.get_contents(file_path)
@@ -431,14 +435,17 @@ class ReportGenerator:
                     sha=existing_file.sha
                 )
                 print(f"✓ Updated existing report at {file_path}")
-            except github.GithubException:
-                # Create new file if it doesn't exist
-                repo.create_file(
-                    path=file_path,
-                    message=commit_message,
-                    content=report_content
-                )
-                print(f"✓ Created new report at {file_path}")
+            except github.GithubException as e:
+                if e.status == 404:
+                    # Create new file if it doesn't exist
+                    repo.create_file(
+                        path=file_path,
+                        message=commit_message,
+                        content=report_content
+                    )
+                    print(f"✓ Created new report at {file_path}")
+                else:
+                    raise e
             
             return True
             
@@ -447,7 +454,7 @@ class ReportGenerator:
             return False
 
     def deploy_to_github_via_api(self, html_content: str, filename: str) -> Optional[str]:
-        """Deploy report to GitHub via API (replaces git operations)"""
+        """Deploy report to GitHub via API (single commit approach)"""
         if not self.github_client or not self.github_repo:
             print("✗ GitHub client or repo not configured")
             return None
@@ -459,12 +466,8 @@ class ReportGenerator:
             # Create commit message
             commit_message = f"Update report: {filename} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
             
-            # Publish via GitHub API
+            # ONLY publish the report file - removed index.html update to prevent double deployments
             if self.publish_report_to_github(html_content, github_path, commit_message):
-                # Also update index.html with latest report
-                index_commit_message = f"Update index.html with latest report - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                self.publish_report_to_github(html_content, "index.html", index_commit_message)
-                
                 # Generate URL - check for custom domain via GitHub API
                 github_url = self._get_github_pages_url(filename)
                 
