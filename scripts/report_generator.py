@@ -22,6 +22,7 @@ import re
 from pyairtable import Api
 from dotenv import load_dotenv
 import github
+from urllib.parse import urlparse
 
 # Load environment variables
 load_dotenv()
@@ -201,10 +202,12 @@ class ReportGenerator:
         
         elif dtype == 'image':
             # Special handling for client_headshot field
-            if field_name == 'client_headshot':
-                return self._extract_image_url(value)
-            # For other image fields, return as is (the template will handle image processing)
-            return str(value)
+            if field_name == 'client_headshot' and value:
+                # Get client name from current context
+                client_name = getattr(self, 'current_client_name', 'unknown-client')
+                return self._get_headshot_url(client_name)
+            # For other image fields, return as is
+            return str(value) if value else ""
         
         # If no Data_Type specified in Airtable, return as string
         return str(value)
@@ -325,6 +328,9 @@ class ReportGenerator:
     
     def generate_html_report(self, report_data: Dict[str, Any], client_name: str) -> tuple[str, str]:
         """Generate HTML report from template and data"""
+        # Store client name for image processing
+        self.current_client_name = client_name
+        
         # Read template
         with open(self.template_path, 'r') as f:
             html_content = f.read()
@@ -728,6 +734,22 @@ class ReportGenerator:
         
         # Return empty string if extraction fails
         return ""
+
+    def _get_headshot_url(self, client_name: str) -> str:
+        """Get the GitHub Pages URL for a client's headshot.
+        
+        Args:
+            client_name: Client name to generate filename from
+            
+        Returns:
+            GitHub Pages URL for the headshot
+        """
+        # Create safe filename (same logic as headshot_sync.py)
+        safe_name = re.sub(r'[^a-zA-Z0-9-]', '', client_name.replace(' ', '-').lower())
+        filename = f"assets/headshots/{safe_name}-headshot.jpg"
+        
+        # Return GitHub Pages URL
+        return f"https://app.agentinsider.co/{filename}"
 
     def _process_chart_bars(self, html_content: str, report_data: Dict[str, Any]) -> str:
         """Process chart bars to set dynamic heights and ensure all bars have values."""
