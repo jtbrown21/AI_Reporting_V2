@@ -50,6 +50,7 @@ class HeadshotSync:
         self.processed_count = 0
         self.failed_count = 0
         self.skipped_count = 0
+        self.orphaned_count = 0  # Track orphaned images removed
         
         # Setup logging
         self.setup_logging()
@@ -220,8 +221,8 @@ class HeadshotSync:
                 
         return False
         
-    def process_client_headshot(self, client: Dict[str, Any]) -> bool:
-        """Download and store individual headshot"""
+    def process_client_headshot(self, client: Dict[str, Any]) -> Dict[str, Any]:
+        """Download and prepare individual headshot for bulk processing"""
         try:
             client_name = client['client_name']
             headshot_data = client['headshot_data']
@@ -230,7 +231,7 @@ class HeadshotSync:
             image_url = self._extract_image_url(headshot_data)
             if not image_url:
                 self.logger.warning(f"No image URL found for {client_name}")
-                return False
+                return {'status': 'failed', 'reason': 'No image URL'}
                 
             # Create filename
             filename = self._create_safe_filename(client_name)
@@ -241,8 +242,7 @@ class HeadshotSync:
             if (manifest_entry.get('url') == image_url and 
                 manifest_entry.get('processed_date')):
                 self.logger.info(f"Skipping {client_name} - unchanged")
-                self.skipped_count += 1
-                return True
+                return {'status': 'skipped', 'client_name': client_name}
                 
             # Download image
             self.logger.info(f"Processing headshot for {client_name}")
@@ -252,65 +252,104 @@ class HeadshotSync:
             # Validate image
             if not self._validate_image(response.content):
                 self.logger.error(f"Invalid image format or size for {client_name}")
-                return False
+                return {'status': 'failed', 'reason': 'Invalid image format'}
                 
-            # Store in GitHub
-            if self._store_image_in_github(file_path, response.content, client_name):
-                # Update manifest
-                if 'headshots' not in self.manifest:
-                    self.manifest['headshots'] = {}
-                    
-                self.manifest['headshots'][client_name] = {
-                    'filename': filename,
-                    'url': image_url,
-                    'processed_date': datetime.now().isoformat(),
-                    'file_size': len(response.content),
-                    'github_url': f"https://app.agentinsider.co/assets/headshots/{filename}"
-                }
-                
-                self.processed_count += 1
-                self.logger.info(f"Successfully processed headshot for {client_name}")
-                return True
-            else:
-                return False
+            # Return image data for bulk processing
+            return {
+                'status': 'ready',
+                'client_name': client_name,
+                'file_path': file_path,
+                'image_data': response.content,
+                'image_url': image_url,
+                'filename': filename,
+                'file_size': len(response.content)
+            }
                 
         except Exception as e:
             self.logger.error(f"Error processing headshot for {client.get('client_name', 'unknown')}: {e}")
-            self.failed_count += 1
-            return False
+            return {'status': 'failed', 'reason': str(e)}
             
-    def _store_image_in_github(self, file_path: str, image_data: bytes, client_name: str) -> bool:
-        """Store image in GitHub repository"""
+    def _store_images_bulk(self, pending_images: List[Dict]) -> bool:
+        """Store multiple images in GitHub repository using a single commit"""
+        if not pending_images:
+            return True
+            
         try:
-            url = f"https://api.github.com/repos/{self.github_repo}/contents/{file_path}"
             headers = {
                 'Authorization': f'token {self.github_token}',
                 'Accept': 'application/vnd.github.v3+json'
             }
             
-            # Check if file exists to get SHA for update
-            response = requests.get(url, headers=headers)
+            # Get current branch SHA
+            ref_url = f"https://api.github.com/repos/{self.github_repo}/git/refs/heads/main"
+            ref_response = requests.get(ref_url, headers=headers)
+            ref_response.raise_for_status()
+            base_sha = ref_response.json()['object']['sha']
             
-            data = {
-                'message': f'Update headshot for {client_name}',
-                'content': base64.b64encode(image_data).decode('utf-8')
+            # Create blobs for each image
+            blobs = []
+            for image_data in pending_images:
+                blob_url = f"https://api.github.com/repos/{self.github_repo}/git/blobs"
+                blob_data = {
+                    'content': base64.b64encode(image_data['image_data']).decode('utf-8'),
+                    'encoding': 'base64'
+                }
+                blob_response = requests.post(blob_url, headers=headers, json=blob_data)
+                blob_response.raise_for_status()
+                blob_sha = blob_response.json()['sha']
+                
+                blobs.append({
+                    'path': image_data['file_path'],
+                    'sha': blob_sha,
+                    'client_name': image_data['client_name']
+                })
+            
+            # Create tree
+            tree_url = f"https://api.github.com/repos/{self.github_repo}/git/trees"
+            tree_data = {
+                'base_tree': base_sha,
+                'tree': [
+                    {
+                        'path': blob['path'],
+                        'mode': '100644',
+                        'type': 'blob',
+                        'sha': blob['sha']
+                    } for blob in blobs
+                ]
             }
+            tree_response = requests.post(tree_url, headers=headers, json=tree_data)
+            tree_response.raise_for_status()
+            tree_sha = tree_response.json()['sha']
             
-            if response.status_code == 200:
-                # Update existing file
-                data['sha'] = response.json()['sha']
-                
-            # Create or update file
-            response = requests.put(url, headers=headers, json=data)
+            # Create commit
+            commit_url = f"https://api.github.com/repos/{self.github_repo}/git/commits"
+            client_names = [blob['client_name'] for blob in blobs]
+            commit_message = f"Bulk update headshots for {len(client_names)} clients"
+            if len(client_names) <= 3:
+                commit_message += f": {', '.join(client_names)}"
             
-            if response.status_code in [200, 201]:
-                return True
-            else:
-                self.logger.error(f"GitHub API error for {client_name}: {response.status_code} - {response.text}")
-                return False
-                
+            commit_data = {
+                'message': commit_message,
+                'tree': tree_sha,
+                'parents': [base_sha]
+            }
+            commit_response = requests.post(commit_url, headers=headers, json=commit_data)
+            commit_response.raise_for_status()
+            commit_sha = commit_response.json()['sha']
+            
+            # Update branch reference
+            ref_update_data = {
+                'sha': commit_sha,
+                'force': False
+            }
+            ref_update_response = requests.patch(ref_url, headers=headers, json=ref_update_data)
+            ref_update_response.raise_for_status()
+            
+            self.logger.info(f"Bulk commit successful: {len(pending_images)} images in 1 commit")
+            return True
+            
         except Exception as e:
-            self.logger.error(f"Error storing image for {client_name}: {e}")
+            self.logger.error(f"Error in bulk commit: {e}")
             return False
             
     def cleanup_orphaned_images(self):
@@ -351,6 +390,7 @@ class HeadshotSync:
                     delete_response = requests.delete(url, headers=headers, json=data)
                     if delete_response.status_code == 200:
                         self.logger.info(f"Successfully removed orphaned image for {client_name}")
+                        self.orphaned_count += 1
                     else:
                         self.logger.error(f"Failed to remove orphaned image for {client_name}")
                         
@@ -361,7 +401,7 @@ class HeadshotSync:
             self.logger.error(f"Error during cleanup: {e}")
             
     def sync_all_headshots(self) -> Dict[str, Any]:
-        """Main entry point - sync all headshots"""
+        """Main entry point - sync all headshots with bulk commits"""
         try:
             self.logger.info("Starting headshot sync process...")
             
@@ -380,25 +420,60 @@ class HeadshotSync:
                     'total': 0
                 }
                 
-            # Process in batches
-            for i in range(0, len(clients), BATCH_SIZE):
-                batch = clients[i:i+BATCH_SIZE]
-                self.logger.info(f"Processing batch {i//BATCH_SIZE + 1}/{(len(clients) + BATCH_SIZE - 1)//BATCH_SIZE}")
+            # Process all clients and collect images for bulk upload
+            pending_images = []
+            
+            for client in clients:
+                result = self.process_client_headshot(client)
                 
-                for client in batch:
-                    self.process_client_headshot(client)
+                if result['status'] == 'ready':
+                    pending_images.append(result)
+                elif result['status'] == 'skipped':
+                    self.skipped_count += 1
+                elif result['status'] == 'failed':
+                    self.failed_count += 1
+                    
+            # Bulk upload all pending images in a single commit
+            if pending_images:
+                self.logger.info(f"Bulk uploading {len(pending_images)} images...")
+                if self._store_images_bulk(pending_images):
+                    # Update manifest for all successfully uploaded images
+                    if 'headshots' not in self.manifest:
+                        self.manifest['headshots'] = {}
+                        
+                    for image_data in pending_images:
+                        client_name = image_data['client_name']
+                        self.manifest['headshots'][client_name] = {
+                            'filename': image_data['filename'],
+                            'url': image_data['image_url'],
+                            'processed_date': datetime.now().isoformat(),
+                            'file_size': image_data['file_size'],
+                            'github_url': f"https://app.agentinsider.co/assets/headshots/{image_data['filename']}"
+                        }
+                        self.processed_count += 1
+                        
+                    self.logger.info(f"Successfully bulk uploaded {len(pending_images)} images")
+                else:
+                    self.logger.error("Bulk upload failed")
+                    self.failed_count += len(pending_images)
                     
             # Cleanup orphaned images
             self.cleanup_orphaned_images()
             
-            # Save manifest
-            self.save_manifest()
+            # Save manifest only if there were changes
+            changes_made = self.processed_count > 0 or self.failed_count > 0 or self.orphaned_count > 0
+            if changes_made:
+                self.save_manifest()
+                self.logger.info(f"Manifest updated due to changes (processed: {self.processed_count}, failed: {self.failed_count}, orphaned: {self.orphaned_count})")
+            else:
+                self.logger.info("No changes detected, skipping manifest update to avoid unnecessary deployments")
             
             # Return summary
             results = {
                 'processed': self.processed_count,
                 'failed': self.failed_count,
                 'skipped': self.skipped_count,
+                'orphaned': self.orphaned_count,
                 'total': len(clients)
             }
             
