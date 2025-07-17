@@ -43,8 +43,8 @@ jobs:
       env:
         AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
         AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_REPO: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_REPO: jtbrown21/AI_Monthly_Reporting_Reports
         FORCE_UPDATE: ${{ github.event.inputs.force_update }}
       run: |
         echo "Starting headshot sync..."
@@ -63,8 +63,8 @@ jobs:
       env:
         AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
         AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        GITHUB_REPO: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        GITHUB_REPO: jtbrown21/AI_Monthly_Reporting_Reports
       run: |
         echo "Checking headshot status..."
         if python scripts/check_headshot_status.py; then
