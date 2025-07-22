@@ -1102,13 +1102,23 @@ def write_to_generated_reports(
                 elif data_type == 'percentage':
                     original = value
                     try:
-                        # Use safe conversion to prevent double conversion
-                        converted, was_converted = safe_percentage_conversion(
-                            value, var_name, 'write_to_generated_reports', context.conversion_tracker
-                        )
-                        report_fields[var_name] = converted
-                        if not was_converted:
-                            print(f"DEBUG: {var_name} already in correct format: {value}")
+                        # Special handling for calculated ratio variables that should not be converted
+                        # These variables calculate ratios (like 1.66 for 166%) not percentages
+                        ratio_variables = ['year1_return']  # Add other ratio variables as needed
+                        
+                        if var_name in ratio_variables:
+                            # For ratio variables, store the calculated value as-is
+                            # The report formatter will handle the percentage display
+                            report_fields[var_name] = float(value)
+                            print(f"  {var_name}: {value} → {value} (ratio - no conversion)")
+                        else:
+                            # Use safe conversion to prevent double conversion
+                            converted, was_converted = safe_percentage_conversion(
+                                value, var_name, 'write_to_generated_reports', context.conversion_tracker
+                            )
+                            report_fields[var_name] = converted
+                            if not was_converted:
+                                print(f"DEBUG: {var_name} already in correct format: {value}")
                     except Exception as e:
                         print(f"DEBUG: Error converting {var_name}: {e}")
                         report_fields[var_name] = value
