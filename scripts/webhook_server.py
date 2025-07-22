@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 import hashlib
 import time
+import github
 
 # Add the scripts directory to the path for imports
 sys.path.append(str(Path(__file__).parent))
@@ -89,6 +90,83 @@ def health_check():
         "timestamp": datetime.now().isoformat(),
         "service": "report-generator-webhook"
     })
+
+@app.route('/debug/github', methods=['GET'])
+def debug_github_auth():
+    """Debug GitHub authentication endpoint"""
+    try:
+        # Get environment variables
+        github_token = os.environ.get('GITHUB_TOKEN')
+        github_repo = os.environ.get('GITHUB_REPO')
+        
+        result = {
+            "environment_check": {
+                "GITHUB_TOKEN": "Set" if github_token else "Not set",
+                "GITHUB_TOKEN_length": len(github_token) if github_token else 0,
+                "GITHUB_TOKEN_starts_with": github_token[:15] + "..." if github_token else "None",
+                "GITHUB_REPO": github_repo or "Not set"
+            }
+        }
+        
+        if not github_token:
+            result["error"] = "GITHUB_TOKEN not set"
+            return jsonify(result)
+            
+        if not github_repo:
+            result["error"] = "GITHUB_REPO not set"
+            return jsonify(result)
+        
+        # Test GitHub authentication
+        try:
+            g = github.Github(github_token)
+            user = g.get_user()
+            
+            result["github_auth"] = {
+                "authenticated_user": user.login,
+                "user_id": user.id,
+                "user_type": user.type
+            }
+            
+            # Test repository access
+            try:
+                repo = g.get_repo(github_repo)
+                result["repository_access"] = {
+                    "name": repo.name,
+                    "full_name": repo.full_name,
+                    "permissions": {
+                        "push": repo.permissions.push,
+                        "pull": repo.permissions.pull,
+                        "admin": repo.permissions.admin
+                    },
+                    "default_branch": repo.default_branch
+                }
+                
+                # Test rate limit
+                rate_limit = g.get_rate_limit()
+                result["rate_limit"] = {
+                    "remaining": rate_limit.core.remaining,
+                    "limit": rate_limit.core.limit,
+                    "reset_time": rate_limit.core.reset.isoformat()
+                }
+                
+                result["status"] = "SUCCESS"
+                
+            except github.UnknownObjectException as e:
+                result["error"] = f"Repository not found or no access: {e}"
+            except Exception as e:
+                result["error"] = f"Repository access error: {e}"
+                
+        except github.BadCredentialsException as e:
+            result["error"] = f"Bad credentials: {e}"
+        except github.RateLimitExceededException as e:
+            result["error"] = f"Rate limit exceeded: {e}"
+        except Exception as e:
+            result["error"] = f"GitHub API error: {e}"
+            
+    except Exception as e:
+        result = {"error": f"Unexpected error: {e}"}
+    
+    return jsonify(result)
 
 @app.route('/webhook/calculation-and-report', methods=['POST'])
 def calculation_and_report_webhook():
@@ -245,6 +323,46 @@ def calculation_only_webhook():
             "timestamp": datetime.now().isoformat()
         }), 500
 
+@app.route('/webhook/debug', methods=['POST'])
+def debug_webhook():
+    """Debug endpoint to test GitHub authentication"""
+    try:
+        # Verify webhook secret
+        secret = request.headers.get('X-Webhook-Secret')
+        if secret != WEBHOOK_SECRET:
+            return jsonify({"error": "Invalid webhook secret"}), 401
+        
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        # Extract action and repository from payload
+        action = data.get('action')
+        repository = data.get('repository', {}).get('name')
+        
+        if action == 'opened' and repository:
+            # Simulate processing for opened issue or pull request
+            return jsonify({
+                "success": True,
+                "message": "Debug webhook received",
+                "action": action,
+                "repository": repository,
+                "timestamp": datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Unsupported action or missing repository",
+                "timestamp": datetime.now().isoformat()
+            }), 400
+        
+    except Exception as e:
+        return jsonify({
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
@@ -255,5 +373,6 @@ if __name__ == '__main__':
     print(f"  POST /webhook/calculation-and-report - Execute full calculation and report generation")
     print(f"  POST /webhook/calculation-only - Run calculation engine only")
     print(f"  POST /webhook/report-only - Generate and deploy report only")
+    print(f"  POST /webhook/debug - Debug endpoint for GitHub authentication")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
